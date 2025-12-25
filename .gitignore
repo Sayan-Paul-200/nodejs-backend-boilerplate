@@ -1,0 +1,68 @@
+# ----------------------
+# 1. Dependency Directories
+# ----------------------
+node_modules/
+
+# ----------------------
+# 2. Compilation Outputs (Build Folder)
+# ----------------------
+dist/
+build/
+
+# ----------------------
+# 3. Environment Variables (CRITICAL SECURITY)
+# ----------------------
+# Never commit your secrets!
+.env
+.env.test
+.env.production
+.env.local
+
+# ----------------------
+# 4. Logs
+# ----------------------
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ----------------------
+# 5. OS Generated Files
+# ----------------------
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# ----------------------
+# 6. IDE & Editor Settings
+# ----------------------
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# ----------------------
+# 7. Testing Coverage
+# ----------------------
+coverage/
+
+# ----------------------
+# 8. Docker
+# ----------------------
+# Ignore local overrides for docker-compose if you use them
+docker-compose.override.yml
+
+# ----------------------
+# 9. Drizzle ORM
+# ----------------------
+# We KEEP the 'drizzle' folder (migrations) but ignore temporary meta files if any
+# drizzle/meta 
+
+# Note: We intentionally DO NOT ignore the 'drizzle' folder because 
+# your teammates need the SQL migration files to run 'migrate' on their machines.
