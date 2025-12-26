@@ -1,19 +1,25 @@
 // Routes definition for authentication module and middleware usage
 
 import { Router } from "express";
-import { register, login, getCurrentUser } from "./auth.controller";
+import { register, login, refresh, getCurrentUser } from "./auth.controller";
 import { verifyJWT } from "../../middlewares/auth.middleware";
+import { validateRequest } from "../../middlewares/validateRequest";
+import { registerSchema, loginSchema, refreshTokenSchema } from "./auth.validation";
 
 const router = Router();
 
-// Public Routes
-router.post("/register", register);
-router.post("/login", login);
+// ==========================================
+// 🔓 PUBLIC ROUTES (No Middleware Attached)
+// ==========================================
+router.post("/register", validateRequest(registerSchema), register);
+router.post("/login", validateRequest(loginSchema), login);
+router.post("/refresh-token", validateRequest(refreshTokenSchema), refresh);
 
-// Protected Routes
-// All routes below this line will require a valid token
-router.use(verifyJWT); 
+// ==========================================
+// 🔒 PROTECTED ROUTES (Middleware Attached Explicitly)
+// ==========================================
 
-router.get("/me", getCurrentUser);
+// Notice: We put 'verifyJWT' directly inside the route definition
+router.get("/me", verifyJWT, getCurrentUser);
 
 export default router;

@@ -1,37 +1,55 @@
 // Interceptor middleware to verify JWT tokens
 
 import { Request, Response, NextFunction } from "express";
-import jwt from "jsonwebtoken";
 import { ApiError } from "../utils/ApiError";
 import { asyncHandler } from "../utils/asyncHandler";
+import jwt from "jsonwebtoken";
+import { db } from "../db";
+import { users } from "../db/schema";
+import { eq } from "drizzle-orm";
 
-interface JwtPayload {
-  id: number;
-  email: string;
+declare global {
+  namespace Express {
+    interface Request {
+      user?: {
+        id: string;
+        email: string;
+        fullName: string;
+      };
+    }
+  }
 }
 
-export const verifyJWT = asyncHandler(async (req: Request, _: Response, next: NextFunction) => {
-  const token =
-    req.header("Authorization")?.replace("Bearer ", "") ||
-    req.cookies?.accessToken; // Support cookies if you implement them
+export const verifyJWT = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+  // DEBUG LOG: See what route is hitting this middleware
+  console.log(`🛡️ Verifying JWT for: ${req.method} ${req.path}`);
+
+  const token = req.header("Authorization")?.replace("Bearer ", "");
 
   if (!token) {
-    throw new ApiError(401, "Unauthorized request");
+    throw new ApiError(401, "Unauthorized request: No token provided");
+  }
+
+  const secret = process.env.ACCESS_TOKEN_SECRET;
+  if (!secret) {
+    throw new ApiError(500, "Server Configuration Error: Secret missing");
   }
 
   try {
-    const decoded = jwt.verify(
-      token,
-      process.env.ACCESS_TOKEN_SECRET as string
-    ) as JwtPayload;
+    const decoded = jwt.verify(token, secret) as jwt.JwtPayload;
+    
+    const user = await db.query.users.findFirst({
+      where: eq(users.id, decoded.id),
+      columns: { id: true, email: true, fullName: true },
+    });
 
-    // Optional: Check DB if user still exists/is active here for extra security
-    // const user = await db.query.users.findFirst({ where: eq(users.id, decoded.id) });
-    // if (!user) throw new ApiError(401, "Invalid Access Token");
+    if (!user) {
+      throw new ApiError(401, "Unauthorized request: User not found");
+    }
 
-    req.user = decoded;
+    req.user = user;
     next();
-  } catch (error) {
-    throw new ApiError(401, "Invalid or expired access token");
+  } catch (error: any) {
+    throw new ApiError(401, error?.message || "Invalid Access Token");
   }
 });

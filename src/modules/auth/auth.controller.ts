@@ -3,17 +3,15 @@
 import { Request, Response } from "express";
 import { asyncHandler } from "../../utils/asyncHandler";
 import { ApiResponse } from "../../utils/ApiResponse";
-import { registerUser } from "./auth.service";
-import { loginUser } from "./auth.service";
-import { verifyJWT } from "../../middlewares/auth.middleware"; // Not used here, used in routes
+import * as AuthService from "./auth.service";
 
 // 1. Register Controller
 export const register = asyncHandler(async (req: Request, res: Response) => {
-  const { email, password } = req.body;
-  // Note: Add Zod validation here in a real scenario
-  
-  const user = await registerUser(email, password);
-  
+  // Data is already validated by Zod middleware at the route level
+  const { email, password, fullName } = req.body;
+
+  const user = await AuthService.registerUser(email, password, fullName);
+
   return res
     .status(201)
     .json(new ApiResponse(201, user, "User registered successfully"));
@@ -22,23 +20,35 @@ export const register = asyncHandler(async (req: Request, res: Response) => {
 // 2. Login Controller
 export const login = asyncHandler(async (req: Request, res: Response) => {
   const { email, password } = req.body;
-  
-  // Zod validation would go here
-  
-  const { user, accessToken } = await loginUser(email, password);
 
-  // Security Note: For high security, send token in HTTPOnly Cookie, 
-  // but for mobile/standard APIs, JSON response is common.
-  return res
-    .status(200)
-    .json(
-      new ApiResponse(200, { user, accessToken }, "User logged in successfully")
-    );
+  const { user, accessToken, refreshToken } = await AuthService.loginUser(
+    email,
+    password
+  );
+
+  return res.status(200).json(
+    new ApiResponse(
+      200,
+      { user, accessToken, refreshToken },
+      "User logged in successfully"
+    )
+  );
 });
 
-// 3. Protected Route Controller (Example)
+// 3. Refresh Token Controller (New "Path C" Security)
+export const refresh = asyncHandler(async (req: Request, res: Response) => {
+  const { refreshToken } = req.body;
+
+  const tokens = await AuthService.refreshUserToken(refreshToken);
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, tokens, "Access token refreshed successfully"));
+});
+
+// 4. Protected Route Controller
 export const getCurrentUser = asyncHandler(async (req: Request, res: Response) => {
-  // req.user is now available thanks to verifyJWT
+  // req.user is injected by verifyJWT middleware
   return res
     .status(200)
     .json(new ApiResponse(200, req.user, "Current user fetched successfully"));

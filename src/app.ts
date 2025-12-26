@@ -6,14 +6,19 @@ import helmet from "helmet";
 import morgan from "morgan";
 import { rateLimit } from "express-rate-limit";
 import { ApiError } from "./utils/ApiError";
-import authRoutes from "./modules/auth/auth.routes";
 import { ApiResponse } from "./utils/ApiResponse";
+import authRoutes from "./modules/auth/auth.routes";
 
 const app = express();
 
-// 1. Security Middleware
-app.use(helmet()); // Secure Headers
+// ==================================================
+// 1. GLOBAL MIDDLEWARES (MUST BE FIRST)
+// ==================================================
 
+// Security Headers
+app.use(helmet());
+
+// CORS Policy
 const whitelist = process.env.CORS_ORIGIN?.split(",") || [];
 app.use(
   cors({
@@ -28,7 +33,7 @@ app.use(
   })
 );
 
-// 2. Rate Limiting
+// Rate Limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 100, // Limit each IP to 100 requests per window
@@ -37,28 +42,35 @@ const limiter = rateLimit({
 });
 app.use(limiter);
 
-// 3. Body Parsing
-app.use(express.json({ limit: "16kb" })); // Limit body size to prevent DoS
+// 🔍 THE FIX: Body Parsing MUST be here (Before Routes)
+app.use(express.json({ limit: "16kb" }));
 app.use(express.urlencoded({ extended: true, limit: "16kb" }));
 
-// 4. Logging
-// Only log if we are NOT in the 'test' environment
+// Logging
 if (process.env.NODE_ENV !== "test") {
   app.use(morgan("combined"));
 }
 
-// 5. Routes (Health Check)
+// ==================================================
+// 2. ROUTES
+// ==================================================
+
+// Home Route
 app.get("/", (_, res) => {
-  res.status(200).json(new ApiResponse(200, null, "Welcome to Sayan's Node.js backend boilerplate 🚀"));
+  res.status(200).json(new ApiResponse(200, null, "Welcome to the Enterprise Node.js Backend 🚀"));
 });
+
+// Health Check
 app.get("/health", (_, res) => {
   res.status(200).json({ status: "UP", timestamp: new Date() });
 });
 
-// 5. Routes (API)
+// API Routes
 app.use("/api/v1/auth", authRoutes);
 
-// 6. Global Error Handler
+// ==================================================
+// 3. GLOBAL ERROR HANDLER (MUST BE LAST)
+// ==================================================
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
   const statusCode = err.statusCode || 500;
   const message = err.message || "Internal Server Error";

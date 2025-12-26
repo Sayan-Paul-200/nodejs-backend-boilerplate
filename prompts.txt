@@ -1,0 +1,14 @@
+{
+  "statusCode": 200,
+  "data": {
+    "user": {
+      "id": "019b5989-1248-71f8-a9a2-a40423b9ccc4",
+      "email": "sayan@example.com",
+      "fullName": "Sayan Developer"
+    },
+    "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjAxOWI1OTg5LTEyNDgtNzFmOC1hOWEyLWE0MDQyM2I5Y2NjNCIsImlhdCI6MTc2NjczOTEyNywiZXhwIjoxNzY2NzQwMDI3fQ.goPmPki6cNZDlysilymBZpjR2fAZv1JJsftVqoeXTTY",
+    "refreshToken": "019b59db-ab7a-77a8-9094-b67cc94366b9"
+  },
+  "message": "User logged in successfully",
+  "success": true
+}
