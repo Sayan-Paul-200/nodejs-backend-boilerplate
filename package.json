@@ -1,6 +1,6 @@
 {
   "name": "boilerplate",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "",
   "main": "index.js",
   "scripts": {
@@ -9,8 +9,9 @@
     "start": "node dist/index.js",
     "db:push": "drizzle-kit push",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "docker exec -it production_api npm run migrate:internal",
+    "db:migrate": "drizzle-kit migrate",
     "migrate:internal": "tsx src/db/migrate.ts",
+    "db:migrate:docker": "docker exec -it production_api npm run migrate:internal",
     "db:studio": "drizzle-kit studio",
     "test": "jest"
   },

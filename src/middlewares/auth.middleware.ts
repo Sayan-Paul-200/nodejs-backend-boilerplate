@@ -15,6 +15,8 @@ declare global {
         id: string;
         email: string;
         fullName: string;
+        role: "admin" | "manager" | "member" | "guest" | string;
+        customPermissions: string[] | null;
       };
     }
   }
@@ -40,7 +42,13 @@ export const verifyJWT = asyncHandler(async (req: Request, res: Response, next: 
     
     const user = await db.query.users.findFirst({
       where: eq(users.id, decoded.id),
-      columns: { id: true, email: true, fullName: true },
+      columns: {
+        id: true,
+        email: true,
+        fullName: true,
+        role: true,
+        customPermissions: true,
+      },
     });
 
     if (!user) {

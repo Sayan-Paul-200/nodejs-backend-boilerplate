@@ -8,6 +8,7 @@ import { rateLimit } from "express-rate-limit";
 import { ApiError } from "./utils/ApiError";
 import { ApiResponse } from "./utils/ApiResponse";
 import authRoutes from "./modules/auth/auth.routes";
+import productRoutes from "./modules/products/products.routes";
 
 const app = express();
 
@@ -67,6 +68,7 @@ app.get("/health", (_, res) => {
 
 // API Routes
 app.use("/api/v1/auth", authRoutes);
+app.use("/api/v1/products", productRoutes);
 
 // ==================================================
 // 3. GLOBAL ERROR HANDLER (MUST BE LAST)

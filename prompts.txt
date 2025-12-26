@@ -2,12 +2,12 @@
   "statusCode": 200,
   "data": {
     "user": {
-      "id": "019b5989-1248-71f8-a9a2-a40423b9ccc4",
-      "email": "sayan@example.com",
-      "fullName": "Sayan Developer"
+      "id": "019b5c16-c6a9-7234-9f4b-4e391af0638f",
+      "email": "member@test.com",
+      "fullName": "Test Member"
     },
-    "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjAxOWI1OTg5LTEyNDgtNzFmOC1hOWEyLWE0MDQyM2I5Y2NjNCIsImlhdCI6MTc2NjczOTEyNywiZXhwIjoxNzY2NzQwMDI3fQ.goPmPki6cNZDlysilymBZpjR2fAZv1JJsftVqoeXTTY",
-    "refreshToken": "019b59db-ab7a-77a8-9094-b67cc94366b9"
+    "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjAxOWI1YzE2LWM2YTktNzIzNC05ZjRiLTRlMzkxYWYwNjM4ZiIsImlhdCI6MTc2Njc3NjU5MiwiZXhwIjoxNzY2Nzc3NDkyfQ.VD_lmIUkIFEwN0c0fr2UekD_RvFCHetYJh3D8JJv-wo",
+    "refreshToken": "019b5c17-59ce-779f-a6d7-15074b4546be"
   },
   "message": "User logged in successfully",
   "success": true

@@ -1,9 +1,12 @@
+CREATE TYPE "public"."user_role" AS ENUM('admin', 'manager', 'member', 'guest');--> statement-breakpoint
 CREATE TYPE "public"."user_status" AS ENUM('active', 'inactive', 'suspended');--> statement-breakpoint
 CREATE TABLE "users" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"full_name" varchar(120) NOT NULL,
 	"email" varchar(255) NOT NULL,
 	"password_hash" text NOT NULL,
+	"role" "user_role" DEFAULT 'member' NOT NULL,
+	"custom_permissions" text[] DEFAULT ARRAY[]::text[],
 	"user_photo_url" varchar(1024),
 	"user_notes" text,
 	"status" "user_status" DEFAULT 'active' NOT NULL,

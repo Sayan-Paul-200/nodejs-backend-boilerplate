@@ -1,5 +1,5 @@
 {
-  "id": "79e00e43-08f4-4b6f-9b67-b20fb6e5952d",
+  "id": "574346a3-ecc5-4d33-9265-78eb4a234b47",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -32,6 +32,21 @@
           "type": "text",
           "primaryKey": false,
           "notNull": true
+        },
+        "role": {
+          "name": "role",
+          "type": "user_role",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'member'"
+        },
+        "custom_permissions": {
+          "name": "custom_permissions",
+          "type": "text[]",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "ARRAY[]::text[]"
         },
         "user_photo_url": {
           "name": "user_photo_url",
@@ -166,6 +181,16 @@
     }
   },
   "enums": {
+    "public.user_role": {
+      "name": "user_role",
+      "schema": "public",
+      "values": [
+        "admin",
+        "manager",
+        "member",
+        "guest"
+      ]
+    },
     "public.user_status": {
       "name": "user_status",
       "schema": "public",
