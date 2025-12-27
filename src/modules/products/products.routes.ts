@@ -2,6 +2,7 @@ import { Router } from "express";
 import { verifyJWT } from "../../middlewares/auth.middleware";
 import { authorize } from "../../middlewares/authorize";
 import { Action } from "../iam/types";
+import { create, list, remove } from "./products.controller";
 
 const router = Router();
 
@@ -13,7 +14,7 @@ router.use(verifyJWT); // 1. Identify User
 router.post(
   "/", 
   authorize('inventory:products', Action.CREATE), 
-  (req, res) => res.json({ msg: "Product Created" })
+  create
 );
 
 // READ Products (Requires '4' bit)
@@ -21,7 +22,7 @@ router.post(
 router.get(
   "/", 
   authorize('inventory:products', Action.READ), 
-  (req, res) => res.json({ msg: "List of Products" })
+  list
 );
 
 // DELETE Product (Requires '1' bit)
@@ -29,7 +30,7 @@ router.get(
 router.delete(
   "/:id", 
   authorize('inventory:products', Action.DELETE), 
-  (req, res) => res.json({ msg: "Product Deleted" })
+  remove
 );
 
 export default router;

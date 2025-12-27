@@ -1,6 +1,7 @@
 import { sql } from "drizzle-orm";
 import { pgTable, uuid, varchar, text, timestamp, pgEnum } from "drizzle-orm/pg-core";
 import { USER_NAME_LENGTH, USER_PROFILE_PIC_URL_LENGTH } from "./_constants";
+import { organizations } from "./organizations";
 
 // 1. Define the Role Enum (Extensible for your SaaS)
 export const userRoleEnum = pgEnum("user_role", ["admin", "manager", "member", "guest"]);
@@ -16,6 +17,9 @@ export const users = pgTable("users", {
   fullName: varchar("full_name", { length: USER_NAME_LENGTH }).notNull(),
   email: varchar("email", { length: 255 }).notNull().unique(),
   passwordHash: text("password_hash").notNull(),
+
+  organizationId: uuid("organization_id")
+    .references(() => organizations.id), // Nullable for now (backward compatibility)
   
   // 2. New IAM Fields
   role: userRoleEnum("role").notNull().default("member"),

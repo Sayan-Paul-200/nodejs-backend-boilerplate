@@ -17,6 +17,7 @@ declare global {
         fullName: string;
         role: "admin" | "manager" | "member" | "guest" | string;
         customPermissions: string[] | null;
+        organizationId: string | null;
       };
     }
   }
@@ -48,6 +49,7 @@ export const verifyJWT = asyncHandler(async (req: Request, res: Response, next: 
         fullName: true,
         role: true,
         customPermissions: true,
+        organizationId: true,
       },
     });
 

@@ -1,7 +1,7 @@
 // Login and registration service using Drizzle ORM and bcrypt
 
 import { db } from "../../db";
-import { users, refreshTokens } from "../../db/schema";
+import { users, refreshTokens, organizations } from "../../db/schema";
 import { ApiError } from "../../utils/ApiError";
 import { eq } from "drizzle-orm";
 import bcrypt from "bcrypt";
@@ -52,6 +52,13 @@ export const registerUser = async (email: string, pass: string, fullName: string
     throw new ApiError(409, "User already exists");
   }
 
+  const [newOrg] = await db
+    .insert(organizations)
+    .values({
+      name: `${fullName}'s Workspace`, // Default name
+    })
+    .returning();
+
   const hashedPassword = await bcrypt.hash(pass, 10);
   const newUserId = uuidv7(); // App-side UUIDv7 generation
 
@@ -63,11 +70,15 @@ export const registerUser = async (email: string, pass: string, fullName: string
       email,
       fullName,
       passwordHash: hashedPassword,
+      organizationId: newOrg.id, // <--- LINKING TENANT
+      role: "admin", // First user is always Admin
     })
     .returning({
       id: users.id,
       email: users.email,
       fullName: users.fullName,
+      organizationId: users.organizationId,
+      role: users.role,
       createdAt: users.createdAt,
     });
 
