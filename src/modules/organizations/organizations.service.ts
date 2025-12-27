@@ -1,14 +1,15 @@
 import { db } from "../../db";
-import { invitations, users } from "../../db/schema";
+import { invitations, users, organizations } from "../../db/schema";
 import { eq, and } from "drizzle-orm";
 import crypto from "crypto";
 import { ApiError } from "../../utils/ApiError";
+import { emailService } from "../../services/email.service";
 
 const INVITE_EXPIRY_HOURS = 48;
 
 export const createInvitation = async (
   email: string, 
-  role: "admin" | "manager" | "member", 
+  role: "admin" | "manager" | "member" | "guest" | string,
   orgId: string, 
   inviterId: string
 ) => {
@@ -34,7 +35,14 @@ export const createInvitation = async (
     throw new ApiError(409, "Invitation already pending for this email.");
   }
 
-  // 3. Generate Token & Expiry
+  // 3. Get Organization Name (For the email)
+  const org = await db.query.organizations.findFirst({
+    where: eq(organizations.id, orgId),
+    columns: { name: true }
+  });
+  if (!org) throw new ApiError(404, "Organization not found");
+
+  // 4. Generate Token & Expiry
   const token = crypto.randomBytes(32).toString("hex");
   const expiresAt = new Date();
   expiresAt.setHours(expiresAt.getHours() + INVITE_EXPIRY_HOURS);
@@ -43,17 +51,19 @@ export const createInvitation = async (
   const [invite] = await db.insert(invitations).values({
     email,
     organizationId: orgId,
-    role,
+    role: role as any,
     invitedBy: inviterId,
     token,
     expiresAt
   }).returning();
 
-  // 5. (TODO) Send Email via SendGrid/AWS SES
-  // For now, we just return the link to simulate it.
-  const inviteLink = `http://localhost:3000/accept-invite?token=${token}`;
+  // 5. Send Email via Service
+  const baseUrl = process.env.FRONTEND_URL || "http://localhost:3000";
+  const inviteLink = `${baseUrl}/accept-invite?token=${token}`;
   
-  return { ...invite, inviteLink };
+  await emailService.sendInvite(email, inviteLink, org.name);
+
+  return invite;
 };
 
 export const validateInviteToken = async (token: string) => {

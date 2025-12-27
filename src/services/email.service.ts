@@ -1,0 +1,65 @@
+import nodemailer from "nodemailer";
+import { getInvitationEmailHtml } from "../templates/invitation-template";
+
+class EmailService {
+  private transporter: nodemailer.Transporter | null = null;
+  private isConfigured = false;
+
+  constructor() {
+    if (
+      process.env.SMTP_HOST &&
+      process.env.SMTP_USER &&
+      process.env.SMTP_PASS
+    ) {
+      this.transporter = nodemailer.createTransport({
+        host: process.env.SMTP_HOST,
+        port: Number(process.env.SMTP_PORT) || 587,
+        secure: process.env.SMTP_SECURE === "true", // true for 465, false for other ports
+        auth: {
+          user: process.env.SMTP_USER,
+          pass: process.env.SMTP_PASS,
+        },
+      });
+      this.isConfigured = true;
+      console.log("✅ Email Service: SMTP Configured");
+    } else {
+      console.warn("⚠️ Email Service: SMTP credentials missing. Emails will be logged to console only.");
+    }
+  }
+
+  async sendInvite(to: string, inviteUrl: string, orgName: string) {
+    const html = getInvitationEmailHtml(inviteUrl, orgName, to);
+    const subject = `Invitation to join ${orgName}`;
+
+    if (!this.isConfigured || !this.transporter) {
+      this.logMockEmail(to, subject, inviteUrl);
+      return;
+    }
+
+    try {
+      await this.transporter.sendMail({
+        from: `"${process.env.FROM_NAME || "MySaaS"}" <${process.env.FROM_EMAIL || "no-reply@example.com"}>`,
+        to,
+        subject,
+        html,
+      });
+      console.log(`📧 Email sent successfully to ${to}`);
+    } catch (error) {
+      console.error("❌ Failed to send email:", error);
+      // Fallback to console log so dev doesn't get stuck
+      this.logMockEmail(to, subject, inviteUrl);
+    }
+  }
+
+  private logMockEmail(to: string, subject: string, link: string) {
+    console.log(`
+    ================ [MOCK EMAIL] ================
+    TO: ${to}
+    SUBJECT: ${subject}
+    LINK: ${link}
+    ==============================================
+    `);
+  }
+}
+
+export const emailService = new EmailService();

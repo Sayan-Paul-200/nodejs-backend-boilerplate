@@ -1,5 +1,48 @@
-{
-    "success": true,
-    "message": "Invitation created",
-    "debugLink": "http://localhost:3000/accept-invite?token=ef612b4b001b530fca710209649f8f99e4c410185c3bff46ca5fd4dee16bc811"
+Ok, the Test 1 almost worked, but I also get the following error-like messages, along with the "MOCK EMAIL" message in the VS Code terminal:
+
+🛡️ Verifying JWT for: POST /invite
+❌ Failed to send email: Error: Invalid login: 535-5.7.8 Username and Password not accepted. For more information, go to
+535 5.7.8  https://support.google.com/mail/?p=BadCredentials 98e67ed59e1d1-34e9223adf5sm22241864a91.14 - gsmtp
+    at SMTPConnection._formatError (D:\Sayan\Backend\node-boilerplate\node_modules\nodemailer\lib\smtp-connection\index.js:809:19)        
+    at SMTPConnection._actionAUTHComplete (D:\Sayan\Backend\node-boilerplate\node_modules\nodemailer\lib\smtp-connection\index.js:1617:34)
+    at SMTPConnection.<anonymous> (D:\Sayan\Backend\node-boilerplate\node_modules\nodemailer\lib\smtp-connection\index.js:556:26)
+    at SMTPConnection._processResponse (D:\Sayan\Backend\node-boilerplate\node_modules\nodemailer\lib\smtp-connection\index.js:993:20)    
+    at SMTPConnection._onData (D:\Sayan\Backend\node-boilerplate\node_modules\nodemailer\lib\smtp-connection\index.js:774:14)
+    at SMTPConnection._onSocketData (D:\Sayan\Backend\node-boilerplate\node_modules\nodemailer\lib\smtp-connection\index.js:195:44)       
+    at TLSSocket.emit (node:events:518:28)
+    at addChunk (node:internal/streams/readable:561:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:512:3)
+    at Readable.push (node:internal/streams/readable:392:5) {        
+  code: 'EAUTH',
+  response: '535-5.7.8 Username and Password not accepted. For more information, go to\n' +
+    '535 5.7.8  https://support.google.com/mail/?p=BadCredentials 98e67ed59e1d1-34e9223adf5sm22241864a91.14 - gsmtp',
+  responseCode: 535,
+  command: 'AUTH PLAIN'
 }
+
+    ================ [MOCK EMAIL] ================
+    TO: test.user@example.com
+    SUBJECT: Invitation to join Alice Founder's Workspace
+    LINK: http://localhost:3000/accept-invite?token=ea5d5c6cc7d791c69a47ec1034ca4f4ed84036f8c9f7b74262f450665c84367e
+    ==============================================
+
+::1 - - [27/Dec/2025:08:52:41 +0000] "POST /api/v1/organizations/invi    ================ [MOCK EMAIL] ================
+    TO: test.user@example.com
+    SUBJECT: Invitation to join Alice Founder's Workspace
+    LINK: http://localhost:3000/accept-invite?token=ea5d5c6cc7d791c69a47ec1034ca4f4ed84036f8c9f7b74262f450665c84367e
+    ================ [MOCK EMAIL] ================
+    TO: test.user@example.com
+    SUBJECT: Invitation to join Alice Founder's Workspace
+    ================ [MOCK EMAIL] ================
+    TO: test.user@example.com
+    ================ [MOCK EMAIL] ================
+    ================ [MOCK EMAIL] ================
+    TO: test.user@example.com
+    SUBJECT: Invitation to join Alice Founder's Workspace
+    LINK: http://localhost:3000/accept-invite?token=ea5d5c6cc7d791c69a47ec1034ca4f4ed84036f8c9f7b74262f450665c84367e
+    ==============================================
+
+::1 - - [27/Dec/2025:08:52:41 +0000] "POST /api/v1/organizations/invite HTTP/1.1" 201 47 "-" "PostmanRuntime/7.39.1"
+
+
+Also, the Test 2 passed successfully; no errors or issues were faced.
