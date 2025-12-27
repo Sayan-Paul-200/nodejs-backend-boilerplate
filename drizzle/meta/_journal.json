@@ -8,6 +8,13 @@
       "when": 1766779538801,
       "tag": "0000_keen_steel_serpent",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1766815110465,
+      "tag": "0001_daily_crusher_hogan",
+      "breakpoints": true
     }
   ]
 }

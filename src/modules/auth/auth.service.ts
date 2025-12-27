@@ -7,6 +7,7 @@ import { eq } from "drizzle-orm";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { v7 as uuidv7 } from "uuid";
+import { invitations } from "../../db/schema";
 
 // Constants for Token Expiry
 const ACCESS_TOKEN_EXPIRY = "15m";
@@ -141,4 +142,37 @@ export const refreshUserToken = async (incomingRefreshToken: string) => {
 
   // 4. Issue a new pair
   return generateTokenPair(tokenRecord.userId);
+};
+
+export const registerViaInvite = async (token: string, fullName: string, password: string) => {
+  // 1. Validate Token
+  const invite = await db.query.invitations.findFirst({
+    where: eq(invitations.token, token)
+  });
+
+  if (!invite || invite.status !== 'pending' || new Date() > invite.expiresAt) {
+    throw new ApiError(400, "Invalid or expired invite token");
+  }
+
+  // 2. Hash Password
+  const hashedPassword = await bcrypt.hash(password, 10);
+  const newUserId = uuidv7();
+
+  // 3. Create User (Linked to Org from Invite)
+  const [newUser] = await db.insert(users).values({
+    id: newUserId,
+    email: invite.email,
+    fullName,
+    passwordHash: hashedPassword,
+    organizationId: invite.organizationId, // <--- THE MAGIC LINK
+    role: invite.role, // Use role from invite
+    status: 'active'
+  }).returning();
+
+  // 4. Mark Invite as Accepted
+  await db.update(invitations)
+    .set({ status: 'accepted' })
+    .where(eq(invitations.id, invite.id));
+
+  return newUser;
 };

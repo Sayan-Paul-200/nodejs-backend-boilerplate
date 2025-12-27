@@ -14,7 +14,8 @@ export type ResourceDomain =
   | 'system:users'
   | 'billing:invoices'
   | 'inventory:products'
-  | 'orders:logistics';
+  | 'orders:logistics'
+  | 'organization:team';
 
 export type RolePermissions = {
   [resource in ResourceDomain]?: {

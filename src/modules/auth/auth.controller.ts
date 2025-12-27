@@ -53,3 +53,15 @@ export const getCurrentUser = asyncHandler(async (req: Request, res: Response) =
     .status(200)
     .json(new ApiResponse(200, req.user, "Current user fetched successfully"));
 });
+
+// 5. Register via Invitation Controller
+export const acceptInvite = asyncHandler(async (req: Request, res: Response) => {
+  const { token, fullName, password } = req.body;
+  const user = await AuthService.registerViaInvite(token, fullName, password);
+  
+  res.status(201).json({
+    success: true,
+    message: "User registered and joined organization successfully",
+    data: { email: user.email }
+  });
+});

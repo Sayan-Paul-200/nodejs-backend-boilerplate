@@ -1,0 +1,73 @@
+import { db } from "../../db";
+import { invitations, users } from "../../db/schema";
+import { eq, and } from "drizzle-orm";
+import crypto from "crypto";
+import { ApiError } from "../../utils/ApiError";
+
+const INVITE_EXPIRY_HOURS = 48;
+
+export const createInvitation = async (
+  email: string, 
+  role: "admin" | "manager" | "member", 
+  orgId: string, 
+  inviterId: string
+) => {
+  // 1. Check if user already exists in the system
+  const existingUser = await db.query.users.findFirst({
+    where: eq(users.email, email)
+  });
+
+  if (existingUser) {
+    throw new ApiError(409, "User already registered. Please use 'Add Member' instead.");
+  }
+
+  // 2. Check for pending duplicates
+  const existingInvite = await db.query.invitations.findFirst({
+    where: and(
+      eq(invitations.email, email), 
+      eq(invitations.organizationId, orgId),
+      eq(invitations.status, "pending")
+    )
+  });
+
+  if (existingInvite) {
+    throw new ApiError(409, "Invitation already pending for this email.");
+  }
+
+  // 3. Generate Token & Expiry
+  const token = crypto.randomBytes(32).toString("hex");
+  const expiresAt = new Date();
+  expiresAt.setHours(expiresAt.getHours() + INVITE_EXPIRY_HOURS);
+
+  // 4. Save to DB
+  const [invite] = await db.insert(invitations).values({
+    email,
+    organizationId: orgId,
+    role,
+    invitedBy: inviterId,
+    token,
+    expiresAt
+  }).returning();
+
+  // 5. (TODO) Send Email via SendGrid/AWS SES
+  // For now, we just return the link to simulate it.
+  const inviteLink = `http://localhost:3000/accept-invite?token=${token}`;
+  
+  return { ...invite, inviteLink };
+};
+
+export const validateInviteToken = async (token: string) => {
+  const invite = await db.query.invitations.findFirst({
+    where: eq(invitations.token, token),
+    with: {
+      // We want to show the user WHICH org they are joining
+      // Note: Requires adding 'relations' in schema (Skipping for brevity, fetching manually below)
+    }
+  });
+
+  if (!invite) throw new ApiError(404, "Invalid invitation token");
+  if (invite.status !== "pending") throw new ApiError(400, "Invitation already used");
+  if (new Date() > invite.expiresAt) throw new ApiError(400, "Invitation expired");
+
+  return invite;
+};

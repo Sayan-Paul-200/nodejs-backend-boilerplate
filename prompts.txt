@@ -1,14 +1,5 @@
 {
-  "statusCode": 200,
-  "data": {
-    "user": {
-      "id": "019b5c16-c6a9-7234-9f4b-4e391af0638f",
-      "email": "member@test.com",
-      "fullName": "Test Member"
-    },
-    "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjAxOWI1YzE2LWM2YTktNzIzNC05ZjRiLTRlMzkxYWYwNjM4ZiIsImlhdCI6MTc2Njc3NjU5MiwiZXhwIjoxNzY2Nzc3NDkyfQ.VD_lmIUkIFEwN0c0fr2UekD_RvFCHetYJh3D8JJv-wo",
-    "refreshToken": "019b5c17-59ce-779f-a6d7-15074b4546be"
-  },
-  "message": "User logged in successfully",
-  "success": true
+    "success": true,
+    "message": "Invitation created",
+    "debugLink": "http://localhost:3000/accept-invite?token=ef612b4b001b530fca710209649f8f99e4c410185c3bff46ca5fd4dee16bc811"
 }

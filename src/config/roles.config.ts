@@ -14,6 +14,7 @@ export const ROLE_RULES: Record<string, RolePermissions> = {
     'system:users': { default: C | R | U | D },
     'billing:invoices': { default: C | R | U | D },
     'inventory:products': { default: C | R | U | D },
+    'organization:team': { default: C | R | U | D },  // Can invite & remove members
   },
   manager: {
     'system:users': { default: R }, // Can see users but not edit
@@ -24,6 +25,7 @@ export const ROLE_RULES: Record<string, RolePermissions> = {
     'system:users': { default: 0 }, // No access
     'billing:invoices': { default: R, conditional: true }, // Can read ONLY own invoices
     'inventory:products': { default: R }, // Can read products
+    'organization:team': { default: R }, // Can see coworker list
   },
   guest: {
     // defaults to 0 for everything

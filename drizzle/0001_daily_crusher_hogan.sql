@@ -1,0 +1,16 @@
+CREATE TYPE "public"."invitation_status" AS ENUM('pending', 'accepted', 'expired');--> statement-breakpoint
+CREATE TABLE "invitations" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"email" varchar(255) NOT NULL,
+	"token" varchar(255) NOT NULL,
+	"organization_id" uuid NOT NULL,
+	"role" "user_role" DEFAULT 'member' NOT NULL,
+	"status" "invitation_status" DEFAULT 'pending' NOT NULL,
+	"expires_at" timestamp with time zone NOT NULL,
+	"invited_by" uuid NOT NULL,
+	"created_at" timestamp with time zone DEFAULT now(),
+	CONSTRAINT "invitations_token_unique" UNIQUE("token")
+);
+--> statement-breakpoint
+ALTER TABLE "invitations" ADD CONSTRAINT "invitations_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "invitations" ADD CONSTRAINT "invitations_invited_by_users_id_fk" FOREIGN KEY ("invited_by") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;
