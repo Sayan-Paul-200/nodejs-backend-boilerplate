@@ -1,48 +1,86 @@
-Ok, the Test 1 almost worked, but I also get the following error-like messages, along with the "MOCK EMAIL" message in the VS Code terminal:
+Ok I am getting the following error in the file src/modules/auth/auth.controller.ts after updating:
 
-🛡️ Verifying JWT for: POST /invite
-❌ Failed to send email: Error: Invalid login: 535-5.7.8 Username and Password not accepted. For more information, go to
-535 5.7.8  https://support.google.com/mail/?p=BadCredentials 98e67ed59e1d1-34e9223adf5sm22241864a91.14 - gsmtp
-    at SMTPConnection._formatError (D:\Sayan\Backend\node-boilerplate\node_modules\nodemailer\lib\smtp-connection\index.js:809:19)        
-    at SMTPConnection._actionAUTHComplete (D:\Sayan\Backend\node-boilerplate\node_modules\nodemailer\lib\smtp-connection\index.js:1617:34)
-    at SMTPConnection.<anonymous> (D:\Sayan\Backend\node-boilerplate\node_modules\nodemailer\lib\smtp-connection\index.js:556:26)
-    at SMTPConnection._processResponse (D:\Sayan\Backend\node-boilerplate\node_modules\nodemailer\lib\smtp-connection\index.js:993:20)    
-    at SMTPConnection._onData (D:\Sayan\Backend\node-boilerplate\node_modules\nodemailer\lib\smtp-connection\index.js:774:14)
-    at SMTPConnection._onSocketData (D:\Sayan\Backend\node-boilerplate\node_modules\nodemailer\lib\smtp-connection\index.js:195:44)       
-    at TLSSocket.emit (node:events:518:28)
-    at addChunk (node:internal/streams/readable:561:12)
-    at readableAddChunkPushByteMode (node:internal/streams/readable:512:3)
-    at Readable.push (node:internal/streams/readable:392:5) {        
-  code: 'EAUTH',
-  response: '535-5.7.8 Username and Password not accepted. For more information, go to\n' +
-    '535 5.7.8  https://support.google.com/mail/?p=BadCredentials 98e67ed59e1d1-34e9223adf5sm22241864a91.14 - gsmtp',
-  responseCode: 535,
-  command: 'AUTH PLAIN'
-}
+Property 'organizationId' does not exist on type '{ id: string; email: string; fullName: string; }'.
 
-    ================ [MOCK EMAIL] ================
-    TO: test.user@example.com
-    SUBJECT: Invitation to join Alice Founder's Workspace
-    LINK: http://localhost:3000/accept-invite?token=ea5d5c6cc7d791c69a47ec1034ca4f4ed84036f8c9f7b74262f450665c84367e
-    ==============================================
+The following is the whole code of the file src/modules/auth/auth.controller.ts after updating:
+// Handler for user registration
 
-::1 - - [27/Dec/2025:08:52:41 +0000] "POST /api/v1/organizations/invi    ================ [MOCK EMAIL] ================
-    TO: test.user@example.com
-    SUBJECT: Invitation to join Alice Founder's Workspace
-    LINK: http://localhost:3000/accept-invite?token=ea5d5c6cc7d791c69a47ec1034ca4f4ed84036f8c9f7b74262f450665c84367e
-    ================ [MOCK EMAIL] ================
-    TO: test.user@example.com
-    SUBJECT: Invitation to join Alice Founder's Workspace
-    ================ [MOCK EMAIL] ================
-    TO: test.user@example.com
-    ================ [MOCK EMAIL] ================
-    ================ [MOCK EMAIL] ================
-    TO: test.user@example.com
-    SUBJECT: Invitation to join Alice Founder's Workspace
-    LINK: http://localhost:3000/accept-invite?token=ea5d5c6cc7d791c69a47ec1034ca4f4ed84036f8c9f7b74262f450665c84367e
-    ==============================================
+import { Request, Response } from "express";
+import { asyncHandler } from "../../utils/asyncHandler";
+import { ApiResponse } from "../../utils/ApiResponse";
+import * as AuthService from "./auth.service";
+import { logAudit } from "../system/audit.service";
 
-::1 - - [27/Dec/2025:08:52:41 +0000] "POST /api/v1/organizations/invite HTTP/1.1" 201 47 "-" "PostmanRuntime/7.39.1"
+// 1. Register Controller
+export const register = asyncHandler(async (req: Request, res: Response) => {
+  // Data is already validated by Zod middleware at the route level
+  const { email, password, fullName } = req.body;
+
+  const user = await AuthService.registerUser(email, password, fullName);
+
+  return res
+    .status(201)
+    .json(new ApiResponse(201, user, "User registered successfully"));
+});
+
+// 2. Login Controller
+export const login = asyncHandler(async (req: Request, res: Response) => {
+  const { email, password } = req.body;
+
+  const { user, accessToken, refreshToken } = await AuthService.loginUser(
+    email,
+    password
+  );
+
+  // 🕵️ AUDIT LOG: User Login
+  logAudit({
+    userId: user.id,
+    organizationId: user.organizationId,
+    action: "USER_LOGIN",
+    resource: `user:${user.id}`,
+    ip: req.ip,
+    userAgent: req.headers["user-agent"],
+  });
+
+  return res.status(200).json(
+    new ApiResponse(
+      200,
+      { user, accessToken, refreshToken },
+      "User logged in successfully"
+    )
+  );
+});
+
+// 3. Refresh Token Controller (New "Path C" Security)
+export const refresh = asyncHandler(async (req: Request, res: Response) => {
+  const { refreshToken } = req.body;
+
+  const tokens = await AuthService.refreshUserToken(refreshToken);
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, tokens, "Access token refreshed successfully"));
+});
+
+// 4. Protected Route Controller
+export const getCurrentUser = asyncHandler(async (req: Request, res: Response) => {
+  // req.user is injected by verifyJWT middleware
+  return res
+    .status(200)
+    .json(new ApiResponse(200, req.user, "Current user fetched successfully"));
+});
+
+// 5. Register via Invitation Controller
+export const acceptInvite = asyncHandler(async (req: Request, res: Response) => {
+  const { token, fullName, password } = req.body;
+  const user = await AuthService.registerViaInvite(token, fullName, password);
+  
+  res.status(201).json({
+    success: true,
+    message: "User registered and joined organization successfully",
+    data: { email: user.email }
+  });
+});
 
 
-Also, the Test 2 passed successfully; no errors or issues were faced.
+Please have a root fix for the above problem.

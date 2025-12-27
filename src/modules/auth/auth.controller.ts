@@ -4,6 +4,7 @@ import { Request, Response } from "express";
 import { asyncHandler } from "../../utils/asyncHandler";
 import { ApiResponse } from "../../utils/ApiResponse";
 import * as AuthService from "./auth.service";
+import { logAudit } from "../system/audit.service";
 
 // 1. Register Controller
 export const register = asyncHandler(async (req: Request, res: Response) => {
@@ -25,6 +26,16 @@ export const login = asyncHandler(async (req: Request, res: Response) => {
     email,
     password
   );
+
+  // 🕵️ AUDIT LOG: User Login
+  logAudit({
+    userId: user.id,
+    organizationId: user.organizationId,
+    action: "USER_LOGIN",
+    resource: `user:${user.id}`,
+    ip: req.ip,
+    userAgent: req.headers["user-agent"],
+  });
 
   return res.status(200).json(
     new ApiResponse(

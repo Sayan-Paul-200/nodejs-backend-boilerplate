@@ -101,6 +101,10 @@ export const loginUser = async (email: string, pass: string) => {
     throw new ApiError(401, "Invalid user credentials");
   }
 
+  await db.update(users)
+    .set({ lastLoginAt: new Date() })
+    .where(eq(users.id, user.id));
+
   const tokens = await generateTokenPair(user.id);
 
   // Return user info (excluding sensitive fields) and tokens
@@ -109,6 +113,8 @@ export const loginUser = async (email: string, pass: string) => {
       id: user.id,
       email: user.email,
       fullName: user.fullName,
+      organizationId: user.organizationId,
+      role: user.role,
     },
     ...tokens,
   };

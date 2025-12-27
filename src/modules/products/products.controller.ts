@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { asyncHandler } from "../../utils/asyncHandler";
 import { ApiError } from "../../utils/ApiError";
 import * as productService from "./products.service";
+import { logAudit } from "../system/audit.service";
 
 // Helper to get Org ID safely
 const getOrgId = (req: Request) => {
@@ -13,6 +14,21 @@ const getOrgId = (req: Request) => {
 export const create = asyncHandler(async (req: Request, res: Response) => {
   const orgId = getOrgId(req);
   const result = await productService.createProduct(req.body, orgId);
+
+  // 🕵️ AUDIT LOG: Product Created
+  // We assume result[0] is the created product because of .returning()
+  const createdProduct = result[0]; 
+
+  logAudit({
+    userId: req.user!.id,
+    organizationId: orgId,
+    action: "PRODUCT_CREATED",
+    resource: `product:${createdProduct.id}`,
+    metadata: { name: createdProduct.name, price: createdProduct.price },
+    ip: req.ip,
+    userAgent: req.headers["user-agent"],
+  });
+
   res.status(201).json({ success: true, data: result });
 });
 
