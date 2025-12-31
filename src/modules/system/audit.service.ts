@@ -2,7 +2,7 @@ import { db } from "../../db";
 import { auditLogs } from "../../db/schema";
 
 type AuditParams = {
-  userId: string;
+  userId: string | null;
   organizationId?: string | null;
   action: string;
   resource?: string;

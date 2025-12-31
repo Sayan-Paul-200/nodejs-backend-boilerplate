@@ -22,6 +22,13 @@
       "when": 1766827219877,
       "tag": "0002_tricky_zeigeist",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1766832302575,
+      "tag": "0003_natural_warbird",
+      "breakpoints": true
     }
   ]
 }

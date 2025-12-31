@@ -3,6 +3,7 @@ import { asyncHandler } from "../../utils/asyncHandler";
 import { ApiError } from "../../utils/ApiError";
 import * as productService from "./products.service";
 import { logAudit } from "../system/audit.service";
+import { checkProductLimit } from "../billing/billing.utils";
 
 // Helper to get Org ID safely
 const getOrgId = (req: Request) => {
@@ -13,6 +14,8 @@ const getOrgId = (req: Request) => {
 
 export const create = asyncHandler(async (req: Request, res: Response) => {
   const orgId = getOrgId(req);
+  // 🛑 BILLING CHECK: This will throw 403 if limit exceeded
+  await checkProductLimit(orgId);
   const result = await productService.createProduct(req.body, orgId);
 
   // 🕵️ AUDIT LOG: Product Created

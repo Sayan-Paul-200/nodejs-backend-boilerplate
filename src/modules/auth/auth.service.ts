@@ -89,6 +89,10 @@ export const registerUser = async (email: string, pass: string, fullName: string
 export const loginUser = async (email: string, pass: string) => {
   const user = await db.query.users.findFirst({
     where: eq(users.email, email),
+    with: {
+      // Drizzle Relation: We need to fetch the Org details too
+      // (Ensure you have relations defined in schema, OR just do a separate query)
+    }
   });
 
   if (!user) {
@@ -99,6 +103,15 @@ export const loginUser = async (email: string, pass: string) => {
 
   if (!isPasswordValid) {
     throw new ApiError(401, "Invalid user credentials");
+  }
+
+  let orgPlan = "free";
+  if (user.organizationId) {
+    const org = await db.query.organizations.findFirst({
+      where: eq(organizations.id, user.organizationId),
+      columns: { plan: true }
+    });
+    if (org) orgPlan = org.plan;
   }
 
   await db.update(users)
@@ -115,6 +128,7 @@ export const loginUser = async (email: string, pass: string) => {
       fullName: user.fullName,
       organizationId: user.organizationId,
       role: user.role,
+      plan: orgPlan,
     },
     ...tokens,
   };
