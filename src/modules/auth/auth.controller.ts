@@ -5,6 +5,7 @@ import { asyncHandler } from "../../utils/asyncHandler";
 import { ApiResponse } from "../../utils/ApiResponse";
 import * as AuthService from "./auth.service";
 import { logAudit } from "../system/audit.service";
+import { emailService } from "../../services/email.service";
 
 // 1. Register Controller
 export const register = asyncHandler(async (req: Request, res: Response) => {
@@ -75,4 +76,30 @@ export const acceptInvite = asyncHandler(async (req: Request, res: Response) => 
     message: "User registered and joined organization successfully",
     data: { email: user.email }
   });
+});
+
+// 6. Forgot Password (Request Link)
+export const forgotPassword = asyncHandler(async (req: Request, res: Response) => {
+  const { email } = req.body;
+  
+  // Service returns the raw token if user exists
+  const resetToken = await AuthService.requestPasswordReset(email);
+
+  // Send Email (if user exists)
+  if (resetToken) {
+    await emailService.sendPasswordReset(email, resetToken);
+  }
+
+  // Security Best Practice: Always say "If that email exists, we sent a link"
+  // This prevents attackers from checking which emails are registered.
+  res.status(200).json(new ApiResponse(200, null, "If an account exists, a reset link has been sent."));
+});
+
+// 7. Reset Password (Consume Token)
+export const resetPassword = asyncHandler(async (req: Request, res: Response) => {
+  const { token, newPassword } = req.body;
+
+  await AuthService.resetPassword(token, newPassword);
+
+  res.status(200).json(new ApiResponse(200, null, "Password reset successfully. You can now login."));
 });

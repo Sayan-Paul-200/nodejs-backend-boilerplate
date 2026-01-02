@@ -8,12 +8,15 @@ import { rateLimit } from "express-rate-limit";
 import { config } from "dotenv"; // Load env vars
 import { ApiError } from "./utils/ApiError";
 import { ApiResponse } from "./utils/ApiResponse";
+import swaggerUi from "swagger-ui-express";
+import { swaggerSpec } from "./config/swagger";
 
 // Route Imports
 import authRoutes from "./modules/auth/auth.routes";
 import productRoutes from "./modules/products/products.routes";
 import orgRoutes from "./modules/organizations/organizations.routes";
 import billingRoutes from "./modules/billing/billing.routes";
+import userRoutes from "./modules/users/users.routes";
 
 // Load environment variables
 config();
@@ -46,6 +49,9 @@ app.use(
     credentials: true,
   })
 );
+
+// 📖 Swagger Documentation Route
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 // Rate Limiting
 const limiter = rateLimit({
@@ -84,7 +90,9 @@ app.get("/health", (_, res) => {
 });
 
 // Standard API Routes
+app.use("/uploads", express.static("uploads"));
 app.use("/api/v1/auth", authRoutes);
+app.use("/api/v1/users", userRoutes);
 app.use("/api/v1/products", productRoutes);
 app.use("/api/v1/organizations", orgRoutes);
 

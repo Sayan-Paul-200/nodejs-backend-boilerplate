@@ -20,4 +20,6 @@ export const products = pgTable("products", {
 
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  // 🗑️ Soft Delete Field
+  deletedAt: timestamp("deleted_at", { withTimezone: true }),
 });

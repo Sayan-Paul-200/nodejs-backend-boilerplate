@@ -30,6 +30,10 @@ export const users = pgTable("users", {
   userPhotoUrl: varchar("user_photo_url", { length: USER_PROFILE_PIC_URL_LENGTH }),
   userNotes: text("user_notes"),
   status: userStatusEnum("status").notNull().default("active"),
+
+  // 🔐 Password Reset Fields
+  resetPasswordToken: text("reset_password_token"), // Stores the HASHED token
+  resetPasswordExpires: timestamp("reset_password_expires", { withTimezone: true }),
   
   lastLoginAt: timestamp("last_login_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),

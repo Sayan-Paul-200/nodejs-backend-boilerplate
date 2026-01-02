@@ -1,5 +1,6 @@
 import nodemailer from "nodemailer";
 import { getInvitationEmailHtml } from "../templates/invitation-template";
+import { getResetPasswordEmailHtml } from "../templates/reset-password";
 
 class EmailService {
   private transporter: nodemailer.Transporter | null = null;
@@ -49,6 +50,26 @@ class EmailService {
       // Fallback to console log so dev doesn't get stuck
       this.logMockEmail(to, subject, inviteUrl);
     }
+  }
+
+  async sendPasswordReset(to: string, token: string) {
+    const baseUrl = process.env.FRONTEND_URL || "http://localhost:3000";
+    const resetUrl = `${baseUrl}/reset-password?token=${token}`;
+    const html = getResetPasswordEmailHtml(resetUrl);
+    
+    // ... reused logic from sendInvite (checking transporter etc.) ...
+    
+    if (!this.isConfigured || !this.transporter) {
+      console.log(`[MOCK EMAIL] Password Reset Link: ${resetUrl}`);
+      return;
+    }
+
+    await this.transporter.sendMail({
+      from: process.env.FROM_EMAIL,
+      to,
+      subject: "Reset Your Password",
+      html,
+    });
   }
 
   private logMockEmail(to: string, subject: string, link: string) {

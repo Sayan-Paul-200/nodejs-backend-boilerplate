@@ -66,3 +66,8 @@ docker-compose.override.yml
 
 # Note: We intentionally DO NOT ignore the 'drizzle' folder because 
 # your teammates need the SQL migration files to run 'migrate' on their machines.
+
+# ----------------------
+# 10. Miscellaneous
+# ----------------------
+uploads/

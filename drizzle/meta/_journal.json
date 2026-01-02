@@ -29,6 +29,13 @@
       "when": 1766832302575,
       "tag": "0003_natural_warbird",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1767178471490,
+      "tag": "0004_flaky_monster_badoon",
+      "breakpoints": true
     }
   ]
 }

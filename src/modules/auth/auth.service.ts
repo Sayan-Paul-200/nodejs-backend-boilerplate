@@ -8,6 +8,7 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { v7 as uuidv7 } from "uuid";
 import { invitations } from "../../db/schema";
+import crypto from "crypto";
 
 // Constants for Token Expiry
 const ACCESS_TOKEN_EXPIRY = "15m";
@@ -195,4 +196,62 @@ export const registerViaInvite = async (token: string, fullName: string, passwor
     .where(eq(invitations.id, invite.id));
 
   return newUser;
+};
+
+export const requestPasswordReset = async (email: string) => {
+  const user = await db.query.users.findFirst({ where: eq(users.email, email) });
+  if (!user) return; // Silent return prevents "Email Enumeration" attacks
+
+  // 1. Generate Token
+  const resetToken = crypto.randomBytes(32).toString("hex");
+  
+  // 2. Hash it for DB storage
+  const tokenHash = crypto.createHash("sha256").update(resetToken).digest("hex");
+
+  // 3. Set Expiry (1 Hour)
+  const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
+
+  // 4. Save to DB
+  await db.update(users)
+    .set({ 
+      resetPasswordToken: tokenHash, 
+      resetPasswordExpires: expiresAt 
+    })
+    .where(eq(users.id, user.id));
+
+  // 5. Send Email (Send the RAW token, not the hash)
+  // We assume you injected emailService or imported it
+  // await emailService.sendPasswordReset(email, resetToken);
+  
+  return resetToken; // Return for controller to call email service
+};
+
+export const resetPassword = async (token: string, newPassword: string) => {
+  // 1. Hash the incoming token to compare with DB
+  const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
+
+  // 2. Find user with this token AND valid expiry
+  // (Note: Drizzle query needs 'gt' operator for date comparison)
+  // Simplified logic: find by token, then check date in JS
+  const user = await db.query.users.findFirst({
+    where: eq(users.resetPasswordToken, tokenHash)
+  });
+
+  if (!user || !user.resetPasswordExpires || user.resetPasswordExpires < new Date()) {
+    throw new ApiError(400, "Invalid or expired reset token");
+  }
+
+  // 3. Hash new password
+  const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+  // 4. Update User & Clear Token
+  await db.update(users)
+    .set({
+      passwordHash: hashedPassword,
+      resetPasswordToken: null,
+      resetPasswordExpires: null
+    })
+    .where(eq(users.id, user.id));
+
+  return true;
 };
