@@ -4,14 +4,18 @@ import express from "express";
 import cors from "cors";
 import helmet from "helmet";
 import morgan from "morgan";
+import compression from "compression"; // 1. Import
+import cookieParser from "cookie-parser"; // 2. Import
+import hpp from "hpp"; // 3. Import
 import { rateLimit } from "express-rate-limit";
-import { config } from "dotenv"; // Load env vars
+import { config } from "dotenv";
 import { ApiError } from "./utils/ApiError";
 import { ApiResponse } from "./utils/ApiResponse";
 import swaggerUi from "swagger-ui-express";
 import fs from "fs";
 import path from "path";
 import { env } from "./config/env";
+import { requestLogger } from "./middlewares/requestId"; // 4. Import
 
 // Route Imports
 import authRoutes from "./modules/auth/auth.routes";
@@ -26,18 +30,21 @@ config();
 const app = express();
 
 // ==================================================
-// 1. GLOBAL MIDDLEWARES (MUST BE FIRST)
+// 1. GLOBAL MIDDLEWARES (ORDER MATTERS)
 // ==================================================
 
-// Security Headers
+// A. Security & Observability (First)
 app.use(helmet());
+app.use(requestLogger); // 🆔 Traceability: Adds x-request-id to every log/response
 
-// Logging
+// B. Logging
 if (env.NODE_ENV !== "test") {
-  app.use(morgan("combined"));
+  // Modified Morgan to log the Request ID
+  morgan.token("id", (req: any) => req.id);
+  app.use(morgan("[:id] :method :url :status :response-time ms"));
 }
 
-// CORS Policy
+// C. CORS
 const whitelist = env.CORS_ORIGIN?.split(",") || [];
 app.use(
   cors({
@@ -48,58 +55,57 @@ app.use(
         callback(new ApiError(403, "Not allowed by CORS"));
       }
     },
-    credentials: true,
+    credentials: true, // Required for Cookies
   })
 );
 
-// 📖 Swagger Documentation Route
-// We read the generated JSON file
-const swaggerFile = path.join(__dirname, "swagger_output.json");
+// D. Performance & parsing
+app.use(compression()); // 🚀 Gzip Compression (Shrinks responses)
+app.use(cookieParser()); // 🍪 Parses cookies (Essential for secure Refresh Tokens)
 
+// ==================================================
+// 2. SPECIAL ROUTES (BEFORE BODY PARSING)
+// ==================================================
+
+app.use("/api/v1/billing", billingRoutes);
+
+// ==================================================
+// 3. BODY PARSING & SECURITY (AFTER WEBHOOKS)
+// ==================================================
+
+app.use(express.json({ limit: "16kb" }));
+app.use(express.urlencoded({ extended: true, limit: "16kb" }));
+app.use(hpp()); // 🛡️ HTTP Parameter Pollution Protection (Must be after body parser)
+
+// 📖 Swagger Documentation
+const swaggerFile = path.join(__dirname, "swagger_output.json");
 if (fs.existsSync(swaggerFile)) {
   const swaggerDocument = JSON.parse(fs.readFileSync(swaggerFile, "utf-8"));
   app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
-} else {
-  console.warn("⚠️ Swagger file not found. Run 'npm run swagger' to generate it.");
 }
 
 // Rate Limiting
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // Limit each IP to 100 requests per window
+  windowMs: 15 * 60 * 1000,
+  max: 100,
   standardHeaders: true,
   legacyHeaders: false,
 });
 app.use(limiter);
 
 // ==================================================
-// 2. SPECIAL ROUTES (BEFORE BODY PARSING)
+// 4. API ROUTES
 // ==================================================
 
-// 🔧 FIX: Move global JSON parsing AFTER the webhook route
-// Webhooks need the RAW body for signature verification.
-// If we run express.json() globally first, it breaks the signature.
-app.use("/api/v1/billing", billingRoutes);
-
-// ==================================================
-// 3. BODY PARSING & STANDARD ROUTES
-// ==================================================
-
-// 🔍 THE FIX: Body Parsing MUST be here (Before other Routes, After Webhooks)
-app.use(express.json({ limit: "16kb" }));
-app.use(express.urlencoded({ extended: true, limit: "16kb" }));
-
-// Home Route
+// Home & Health
 app.get("/", (_, res) => {
   res.status(200).json(new ApiResponse(200, null, "Welcome to the Enterprise Node.js Backend 🚀"));
 });
-
-// Health Check
 app.get("/health", (_, res) => {
   res.status(200).json({ status: "UP", timestamp: new Date() });
 });
 
-// Standard API Routes
+// Module Routes
 app.use("/uploads", express.static("uploads"));
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/users", userRoutes);
@@ -107,25 +113,26 @@ app.use("/api/v1/products", productRoutes);
 app.use("/api/v1/organizations", orgRoutes);
 
 // ==================================================
-// 4. ERROR HANDLING (MUST BE LAST)
+// 5. ERROR HANDLING
 // ==================================================
 
-// 404 Handler (Resource not found)
 app.use((req, res, next) => {
   next(new ApiError(404, "Resource not found"));
 });
 
-// Global Error Handler
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
   const statusCode = err.statusCode || 500;
   const message = err.message || "Internal Server Error";
+
+  // Log with Request ID for debugging
+  console.error(`[${(req as any).id}] ❌ Error: ${message}`);
 
   res.status(statusCode).json({
     success: false,
     statusCode,
     message,
+    requestId: (req as any).id, // Help the frontend dev trace the error
     errors: err.errors || [],
-    // Only show stack trace in development
     stack: env.NODE_ENV === "development" ? err.stack : undefined,
   });
 });
