@@ -1,3 +1,5 @@
+import { env } from "./env";
+
 export const BILLING_CONFIG = {
   plans: {
     free: {
@@ -8,7 +10,7 @@ export const BILLING_CONFIG = {
     pro: {
       name: "Pro",
       limit: 100,
-      priceId: process.env.STRIPE_PRO_PRICE_ID, // Loaded from .env
+      priceId: env.STRIPE_PRO_PRICE_ID, // Loaded from .env
     },
     enterprise: {
       name: "Enterprise",

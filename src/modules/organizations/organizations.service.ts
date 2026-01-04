@@ -4,6 +4,7 @@ import { eq, and } from "drizzle-orm";
 import crypto from "crypto";
 import { ApiError } from "../../utils/ApiError";
 import { emailService } from "../../services/email.service";
+import { env } from "../../config/env";
 
 const INVITE_EXPIRY_HOURS = 48;
 
@@ -58,7 +59,7 @@ export const createInvitation = async (
   }).returning();
 
   // 5. Send Email via Service
-  const baseUrl = process.env.FRONTEND_URL || "http://localhost:3000";
+  const baseUrl = env.FRONTEND_URL || "http://localhost:3000";
   const inviteLink = `${baseUrl}/accept-invite?token=${token}`;
   
   await emailService.sendInvite(email, inviteLink, org.name);

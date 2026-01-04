@@ -7,6 +7,7 @@ import jwt from "jsonwebtoken";
 import { db } from "../db";
 import { users } from "../db/schema";
 import { eq } from "drizzle-orm";
+import { env } from "../config/env";
 
 declare global {
   namespace Express {
@@ -33,7 +34,7 @@ export const verifyJWT = asyncHandler(async (req: Request, res: Response, next: 
     throw new ApiError(401, "Unauthorized request: No token provided");
   }
 
-  const secret = process.env.ACCESS_TOKEN_SECRET;
+  const secret = env.ACCESS_TOKEN_SECRET;
   if (!secret) {
     throw new ApiError(500, "Server Configuration Error: Secret missing");
   }

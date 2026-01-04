@@ -2,7 +2,7 @@
 
 import { db } from "../../db";
 import { products } from "../../db/schema";
-import { eq, and, isNull } from "drizzle-orm";
+import { count, eq, and, isNull, desc } from "drizzle-orm";
 
 export const createProduct = async (data: any, orgId: string) => {
   return await db.insert(products).values({
@@ -11,14 +11,24 @@ export const createProduct = async (data: any, orgId: string) => {
   }).returning();
 };
 
-export const getProducts = async (orgId: string) => {
-  // 🔒 SCOPED QUERY: Only fetch products for this Org
-  return await db.query.products.findMany({
-    where: and(
-      eq(products.organizationId, orgId),
-      isNull(products.deletedAt) // 👈 ONLY fetch non-deleted items
-    ),
+export const getProducts = async (orgId: string, page: number, limit: number) => {
+  const offset = (page - 1) * limit;
+
+  // 1. Get Data
+  const data = await db.query.products.findMany({
+    where: and(eq(products.organizationId, orgId), isNull(products.deletedAt)),
+    limit: limit,
+    offset: offset,
+    orderBy: [desc(products.createdAt)], // Show newest first
   });
+
+  // 2. Get Total Count (Efficiently)
+  const [totalResult] = await db
+    .select({ count: count() })
+    .from(products)
+    .where(and(eq(products.organizationId, orgId), isNull(products.deletedAt)));
+
+  return { data, total: totalResult.count };
 };
 
 export const deleteProduct = async (productId: string, orgId: string) => {

@@ -1,16 +1,32 @@
-{
-    "statusCode": 200,
-    "data": {
-        "user": {
-            "id": "019b736d-2ae7-72b8-ba37-b6347cf5e250",
-            "email": "bob@employee.com",
-            "fullName": "Bob Employee",
-            "organizationId": "1a227cd9-fe30-4286-9735-fd4170db9f1f",
-            "role": "member"
-        },
-        "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjAxOWI3MzZkLTJhZTctNzJiOC1iYTM3LWI2MzQ3Y2Y1ZTI1MCIsImlhdCI6MTc2NzE2ODM3NSwiZXhwIjoxNzY3MTY5Mjc1fQ.7CHCGvr6J-HxprWKke6snLnOejvpRwVWv1d69ApYGRQ",
-        "refreshToken": "019b7371-7abc-7638-a706-0621a5b34f20"
-    },
-    "message": "User logged in successfully",
-    "success": true
-}
+For reference, I use the following environment variables:
+
+# Node Environment
+NODE_ENV=development
+PORT=8000
+
+# Database
+DATABASE_URL=postgres://postgres:....
+
+# Authentication
+ACCESS_TOKEN_SECRET=your_super_secret_jwt_key_change_this
+FRONTEND_URL=http://localhost:3000
+CORS_ORIGIN=http://localhost:3000
+
+# Email Configuration (Nodemailer)
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=your-name@gmail.com
+SMTP_PASS=<app-password>
+SMTP_SECURE=false
+
+# Sender Identity
+FROM_EMAIL=no-reply@gmail.com
+FROM_NAME="Sayan Enterprises"
+
+# Stripe Configuration
+STRIPE_SECRET_KEY=sk_test_...
+STRIPE_WEBHOOK_SECRET=whsec_...
+STRIPE_PRO_PRICE_ID=price_...
+
+
+Modify the file src/config/env.ts accordingly.

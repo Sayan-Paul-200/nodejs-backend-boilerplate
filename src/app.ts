@@ -11,6 +11,7 @@ import { ApiResponse } from "./utils/ApiResponse";
 import swaggerUi from "swagger-ui-express";
 import fs from "fs";
 import path from "path";
+import { env } from "./config/env";
 
 // Route Imports
 import authRoutes from "./modules/auth/auth.routes";
@@ -32,12 +33,12 @@ const app = express();
 app.use(helmet());
 
 // Logging
-if (process.env.NODE_ENV !== "test") {
+if (env.NODE_ENV !== "test") {
   app.use(morgan("combined"));
 }
 
 // CORS Policy
-const whitelist = process.env.CORS_ORIGIN?.split(",") || [];
+const whitelist = env.CORS_ORIGIN?.split(",") || [];
 app.use(
   cors({
     origin: (origin, callback) => {
@@ -125,7 +126,7 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
     message,
     errors: err.errors || [],
     // Only show stack trace in development
-    stack: process.env.NODE_ENV === "development" ? err.stack : undefined,
+    stack: env.NODE_ENV === "development" ? err.stack : undefined,
   });
 });
 

@@ -1,5 +1,6 @@
 import { defineConfig } from "drizzle-kit";
 import dotenv from "dotenv";
+import { env } from "./src/config/env";
 
 dotenv.config();
 
@@ -8,7 +9,7 @@ export default defineConfig({
   out: "./drizzle", // Folder where .sql migration files will be stored
   dialect: "postgresql",
   dbCredentials: {
-    url: process.env.DATABASE_URL as string,
+    url: env.DATABASE_URL as string,
   },
   verbose: true,
   strict: true,

@@ -1,36 +1,27 @@
 // Entry point of the application
 
-import dotenv from "dotenv";
-
-dotenv.config();
-
 import { app } from "./app";
 import { db } from "./db";
 import logger from "./config/logger";
 import { sql } from "drizzle-orm";
+import { env } from "./config/env";
 
-if (!process.env.ACCESS_TOKEN_SECRET) {
-  console.error("❌ FATAL ERROR: ACCESS_TOKEN_SECRET is not defined in .env file.");
-  process.exit(1); // Stop the server instantly if secret is missing
-}
+// Note: We removed manual 'dotenv' and 'process.env' checks 
+// because src/config/env.ts now handles validation automatically.
 
-if (!process.env.DATABASE_URL) {
-  console.error("❌ FATAL ERROR: DATABASE_URL is not defined in .env file.");
-  process.exit(1);
-}
+const PORT = env.PORT;
 
-const PORT = process.env.PORT || 8000;
+let server: any; // Reference to the HTTP server
 
-// Test DB connection before starting
 const init = async () => {
   try {
     // A simple query to ensure DB is connected
     await db.execute(sql`SELECT 1`); 
     logger.info("Database connected successfully");
 
-    app.listen(PORT, () => {
+    server = app.listen(PORT, () => {
       logger.info(`Server running on port ${PORT}`);
-      logger.info(`🔑 Loaded JWT Secret: ${process.env.ACCESS_TOKEN_SECRET?.slice(0, 5)}...`);
+      logger.info(`🔑 Loaded JWT Secret: ${env.ACCESS_TOKEN_SECRET.slice(0, 5)}...`);
     });
   } catch (error) {
     logger.error("Database connection failed", error);
@@ -39,3 +30,35 @@ const init = async () => {
 };
 
 init();
+
+// ==========================================
+// 🛑 GRACEFUL SHUTDOWN LOGIC
+// ==========================================
+const shutdown = (signal: string) => {
+  logger.info(`\nReceived ${signal}. Starting graceful shutdown...`);
+
+  if (server) {
+    // 1. Stop accepting new requests
+    server.close(() => {
+      logger.info("HTTP server closed. Pending requests finished.");
+      
+      // 2. (Optional) Close Database/Redis connections here if you export the pool
+      // await pool.end(); 
+
+      logger.info("Process terminated.");
+      process.exit(0);
+    });
+  } else {
+    process.exit(0);
+  }
+
+  // 3. Force shutdown if it takes too long (e.g. hung connections)
+  setTimeout(() => {
+    logger.error("Forcing shutdown after timeout...");
+    process.exit(1);
+  }, 10000); // 10 seconds
+};
+
+// Listen for termination signals (e.g., Docker stop, Ctrl+C)
+process.on("SIGTERM", () => shutdown("SIGTERM"));
+process.on("SIGINT", () => shutdown("SIGINT"));

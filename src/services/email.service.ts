@@ -1,6 +1,7 @@
 import nodemailer from "nodemailer";
 import { getInvitationEmailHtml } from "../templates/invitation-template";
 import { getResetPasswordEmailHtml } from "../templates/reset-password";
+import { env } from "../config/env";
 
 class EmailService {
   private transporter: nodemailer.Transporter | null = null;
@@ -8,17 +9,17 @@ class EmailService {
 
   constructor() {
     if (
-      process.env.SMTP_HOST &&
-      process.env.SMTP_USER &&
-      process.env.SMTP_PASS
+      env.SMTP_HOST &&
+      env.SMTP_USER &&
+      env.SMTP_PASS
     ) {
       this.transporter = nodemailer.createTransport({
-        host: process.env.SMTP_HOST,
-        port: Number(process.env.SMTP_PORT) || 587,
-        secure: process.env.SMTP_SECURE === "true", // true for 465, false for other ports
+        host: env.SMTP_HOST,
+        port: Number(env.SMTP_PORT) || 587,
+        secure: env.SMTP_SECURE === "true", // true for 465, false for other ports
         auth: {
-          user: process.env.SMTP_USER,
-          pass: process.env.SMTP_PASS,
+          user: env.SMTP_USER,
+          pass: env.SMTP_PASS,
         },
       });
       this.isConfigured = true;
@@ -39,7 +40,7 @@ class EmailService {
 
     try {
       await this.transporter.sendMail({
-        from: `"${process.env.FROM_NAME || "MySaaS"}" <${process.env.FROM_EMAIL || "no-reply@example.com"}>`,
+        from: `"${env.FROM_NAME || "MySaaS"}" <${env.FROM_EMAIL || "no-reply@example.com"}>`,
         to,
         subject,
         html,
@@ -53,7 +54,7 @@ class EmailService {
   }
 
   async sendPasswordReset(to: string, token: string) {
-    const baseUrl = process.env.FRONTEND_URL || "http://localhost:3000";
+    const baseUrl = env.FRONTEND_URL || "http://localhost:3000";
     const resetUrl = `${baseUrl}/reset-password?token=${token}`;
     const html = getResetPasswordEmailHtml(resetUrl);
     
@@ -65,7 +66,7 @@ class EmailService {
     }
 
     await this.transporter.sendMail({
-      from: process.env.FROM_EMAIL,
+      from: env.FROM_EMAIL,
       to,
       subject: "Reset Your Password",
       html,

@@ -9,6 +9,7 @@ import jwt from "jsonwebtoken";
 import { v7 as uuidv7 } from "uuid";
 import { invitations } from "../../db/schema";
 import crypto from "crypto";
+import { env } from "../../config/env";
 
 // Constants for Token Expiry
 const ACCESS_TOKEN_EXPIRY = "15m";
@@ -20,10 +21,10 @@ const REFRESH_TOKEN_EXPIRY_DAYS = 7;
  */
 const generateTokenPair = async (userId: string) => {
   // Ensure we use the exact variable name from .env
-  const secret = process.env.ACCESS_TOKEN_SECRET;
+  const secret = env.ACCESS_TOKEN_SECRET;
   
   if (!secret) {
-    throw new Error("CRITICAL: process.env.ACCESS_TOKEN_SECRET is undefined in auth.service");
+    throw new Error("CRITICAL: env.ACCESS_TOKEN_SECRET is undefined in auth.service");
   }
 
   const accessToken = jwt.sign(
