@@ -9,7 +9,8 @@ import { config } from "dotenv"; // Load env vars
 import { ApiError } from "./utils/ApiError";
 import { ApiResponse } from "./utils/ApiResponse";
 import swaggerUi from "swagger-ui-express";
-import { swaggerSpec } from "./config/swagger";
+import fs from "fs";
+import path from "path";
 
 // Route Imports
 import authRoutes from "./modules/auth/auth.routes";
@@ -51,7 +52,15 @@ app.use(
 );
 
 // 📖 Swagger Documentation Route
-app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+// We read the generated JSON file
+const swaggerFile = path.join(__dirname, "swagger_output.json");
+
+if (fs.existsSync(swaggerFile)) {
+  const swaggerDocument = JSON.parse(fs.readFileSync(swaggerFile, "utf-8"));
+  app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+} else {
+  console.warn("⚠️ Swagger file not found. Run 'npm run swagger' to generate it.");
+}
 
 // Rate Limiting
 const limiter = rateLimit({
