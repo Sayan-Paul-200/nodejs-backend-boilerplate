@@ -25,7 +25,7 @@ class EmailService {
       this.isConfigured = true;
       console.log("✅ Email Service: SMTP Configured");
     } else {
-      console.warn("⚠️ Email Service: SMTP credentials missing. Emails will be logged to console only.");
+      console.warn("⚠️ Email Service: SMTP credentials missing. Using Mock Mode.");
     }
   }
 
@@ -45,9 +45,9 @@ class EmailService {
         subject,
         html,
       });
-      console.log(`📧 Email sent successfully to ${to}`);
+      console.log(`📧 Invitation Email sent successfully to ${to}`);
     } catch (error) {
-      console.error("❌ Failed to send email:", error);
+      console.error("❌ Failed to send invitation email:", error);
       // Fallback to console log so dev doesn't get stuck
       this.logMockEmail(to, subject, inviteUrl);
     }
@@ -57,20 +57,27 @@ class EmailService {
     const baseUrl = env.FRONTEND_URL || "http://localhost:3000";
     const resetUrl = `${baseUrl}/reset-password?token=${token}`;
     const html = getResetPasswordEmailHtml(resetUrl);
+    const subject = "Reset Your Password";
     
     // ... reused logic from sendInvite (checking transporter etc.) ...
     
     if (!this.isConfigured || !this.transporter) {
-      console.log(`[MOCK EMAIL] Password Reset Link: ${resetUrl}`);
+      this.logMockEmail(to, subject, resetUrl);
       return;
     }
 
-    await this.transporter.sendMail({
-      from: env.FROM_EMAIL,
+    try {
+      await this.transporter.sendMail({
+      from: `"${env.FROM_NAME}" <${env.FROM_EMAIL}>`,
       to,
-      subject: "Reset Your Password",
+      subject,
       html,
     });
+    console.log(`📧 Password Reset sent to ${to}`);
+    } catch (error) {
+      console.error("❌ Failed to send reset email:", error);
+      this.logMockEmail(to, subject, resetUrl);
+    }
   }
 
   private logMockEmail(to: string, subject: string, link: string) {

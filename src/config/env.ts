@@ -33,6 +33,11 @@ const envSchema = z.object({
   STRIPE_SECRET_KEY: z.string().startsWith("sk_", "Must start with sk_").optional(),
   STRIPE_WEBHOOK_SECRET: z.string().startsWith("whsec_", "Must start with whsec_").optional(),
   STRIPE_PRO_PRICE_ID: z.string().startsWith("price_", "Must start with price_").optional(),
+
+  // Redis Configuration
+  REDIS_HOST: z.string().default("localhost"),
+  REDIS_PORT: z.string().default("6379"),
+  // Optional: REDIS_PASSWORD if you use a secure cloud redis later
 });
 
 // Validate process.env

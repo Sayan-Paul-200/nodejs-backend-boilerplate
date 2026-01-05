@@ -5,6 +5,7 @@ import { db } from "./db";
 import logger from "./config/logger";
 import { sql } from "drizzle-orm";
 import { env } from "./config/env";
+import { emailWorker } from "./jobs/email.worker";
 
 // Note: We removed manual 'dotenv' and 'process.env' checks 
 // because src/config/env.ts now handles validation automatically.
@@ -22,6 +23,7 @@ const init = async () => {
     server = app.listen(PORT, () => {
       logger.info(`Server running on port ${PORT}`);
       logger.info(`🔑 Loaded JWT Secret: ${env.ACCESS_TOKEN_SECRET.slice(0, 5)}...`);
+      logger.info(`👷 Email Worker started successfully`);
     });
   } catch (error) {
     logger.error("Database connection failed", error);
@@ -34,29 +36,30 @@ init();
 // ==========================================
 // 🛑 GRACEFUL SHUTDOWN LOGIC
 // ==========================================
-const shutdown = (signal: string) => {
+const shutdown = async (signal: string) => {
   logger.info(`\nReceived ${signal}. Starting graceful shutdown...`);
 
+  // 1. Close HTTP Server (Stop new API requests)
   if (server) {
-    // 1. Stop accepting new requests
     server.close(() => {
       logger.info("HTTP server closed. Pending requests finished.");
-      
-      // 2. (Optional) Close Database/Redis connections here if you export the pool
-      // await pool.end(); 
-
-      logger.info("Process terminated.");
-      process.exit(0);
     });
-  } else {
-    process.exit(0);
   }
 
-  // 3. Force shutdown if it takes too long (e.g. hung connections)
-  setTimeout(() => {
-    logger.error("Forcing shutdown after timeout...");
+  try {
+    // 2. Close Worker (Finish current email job, then stop)
+    await emailWorker.close();
+    logger.info("👷 Email Worker closed gracefully.");
+
+    // 3. (Optional) Close Database Connection
+    // await db.end(); 
+
+    logger.info("Process terminated.");
+    process.exit(0);
+  } catch (error) {
+    logger.error("Error during shutdown", error);
     process.exit(1);
-  }, 10000); // 10 seconds
+  }
 };
 
 // Listen for termination signals (e.g., Docker stop, Ctrl+C)

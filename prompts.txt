@@ -1,32 +1,11 @@
-For reference, I use the following environment variables:
-
-# Node Environment
-NODE_ENV=development
-PORT=8000
-
-# Database
-DATABASE_URL=postgres://postgres:....
-
-# Authentication
-ACCESS_TOKEN_SECRET=your_super_secret_jwt_key_change_this
-FRONTEND_URL=http://localhost:3000
-CORS_ORIGIN=http://localhost:3000
-
-# Email Configuration (Nodemailer)
-SMTP_HOST=smtp.gmail.com
-SMTP_PORT=587
-SMTP_USER=your-name@gmail.com
-SMTP_PASS=<app-password>
-SMTP_SECURE=false
-
-# Sender Identity
-FROM_EMAIL=no-reply@gmail.com
-FROM_NAME="Sayan Enterprises"
-
-# Stripe Configuration
-STRIPE_SECRET_KEY=sk_test_...
-STRIPE_WEBHOOK_SECRET=whsec_...
-STRIPE_PRO_PRICE_ID=price_...
+Ok, the Test 3: The "Fire and Forget" Async Queue was almost successful, except one small issue; while I hit the send request, the response was immediate, and gradually I get the following logs:
+[a17622db-828e-4c36-8d92-cdab16acf56d] POST /api/v1/auth/forgot-password 200 65.675 ms
+info: 📧 Processing Email Job: RESET_PASSWORD for test@enterprise.com {"timestamp":"2026-01-05T20:00:38.908Z"}
+info: ✅ Email Job Completed: 1 {"timestamp":"2026-01-05T20:00:45.318Z"}
 
 
-Modify the file src/config/env.ts accordingly.
+I am concerned why I didn't see the [MOCK EMAIL] log.
+
+
+
+Also, for the Test 4: Organization Invite, when I hit the send request, I do get the 201 response, but the it took 3.71 seconds. Does that require any fix?

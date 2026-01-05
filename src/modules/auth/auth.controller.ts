@@ -6,6 +6,7 @@ import { ApiResponse } from "../../utils/ApiResponse";
 import * as AuthService from "./auth.service";
 import { logAudit } from "../system/audit.service";
 import { emailService } from "../../services/email.service";
+import { addEmailJob } from "../../jobs/email.queue";
 
 // 1. Register Controller
 export const register = asyncHandler(async (req: Request, res: Response) => {
@@ -87,7 +88,16 @@ export const forgotPassword = asyncHandler(async (req: Request, res: Response) =
 
   // Send Email (if user exists)
   if (resetToken) {
-    await emailService.sendPasswordReset(email, resetToken);
+
+    // OLD WAY - Direct Send
+    // await emailService.sendPasswordReset(email, resetToken);
+
+    // NEW WAY - Queue the Email Job (Instant)
+    await addEmailJob({
+      type: "RESET_PASSWORD",
+      to: email,
+      payload: { token: resetToken }
+    });
   }
 
   // Security Best Practice: Always say "If that email exists, we sent a link"

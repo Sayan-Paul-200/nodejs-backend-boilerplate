@@ -3,7 +3,8 @@ import { invitations, users, organizations } from "../../db/schema";
 import { eq, and } from "drizzle-orm";
 import crypto from "crypto";
 import { ApiError } from "../../utils/ApiError";
-import { emailService } from "../../services/email.service";
+// import { emailService } from "../../services/email.service";
+import { addEmailJob } from "../../jobs/email.queue";
 import { env } from "../../config/env";
 
 const INVITE_EXPIRY_HOURS = 48;
@@ -48,7 +49,7 @@ export const createInvitation = async (
   const expiresAt = new Date();
   expiresAt.setHours(expiresAt.getHours() + INVITE_EXPIRY_HOURS);
 
-  // 4. Save to DB
+  // 5. Save to DB
   const [invite] = await db.insert(invitations).values({
     email,
     organizationId: orgId,
@@ -62,9 +63,20 @@ export const createInvitation = async (
   const baseUrl = env.FRONTEND_URL || "http://localhost:3000";
   const inviteLink = `${baseUrl}/accept-invite?token=${token}`;
   
-  await emailService.sendInvite(email, inviteLink, org.name);
+  // Old Way - Direct Send
+  // await emailService.sendInvite(email, inviteLink, org.name);
 
-  return invite;
+  // 🚀 ASYNC: Push to Queue instead of sending directly
+  await addEmailJob({
+    type: "INVITE",
+    to: email,
+    payload: {
+      token: token,      // Worker needs this to reconstruct link (or you can pass link directly)
+      orgName: org.name
+    }
+  });
+
+  return { ...invite, inviteLink };
 };
 
 export const validateInviteToken = async (token: string) => {
