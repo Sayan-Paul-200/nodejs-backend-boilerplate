@@ -1,0 +1,92 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    services:
+      # 🐳 Postgres Service
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: password
+          POSTGRES_DB: myapp_test     # Separate DB for testing
+        ports:
+          - 5432:5432
+        # Health check to ensure DB is ready before tests start
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      # 🐳 Redis Service
+      redis:
+        image: redis:alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    # 🟢 Node Version (Aligned with Dockerfile 'FROM node:20-alpine')
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+
+    - name: Install Dependencies
+      run: npm ci
+
+    # 1️⃣ Build Check (Matches 'RUN npm run build' in Dockerfile)
+    - name: TypeScript Build Check
+      run: npm run build
+
+    # 2️⃣ Database Setup
+    # Uses 'db:push' (Drizzle) to sync schema with the temporary CI database
+    - name: Setup Test Database
+      run: npm run db:push
+      env:
+        # Connects to the postgres service defined above
+        DATABASE_URL: postgres://postgres:password@localhost:5432/myapp_test
+        POSTGRES_USER: postgres
+        POSTGRES_PASSWORD: password
+        POSTGRES_DB: myapp_test
+        # 🛡️ Dummies to pass Zod validation during migration script init
+        ACCESS_TOKEN_SECRET: test_secret_key_at_least_10_chars
+        STRIPE_SECRET_KEY: sk_test_dummy
+        STRIPE_WEBHOOK_SECRET: whsec_dummy
+        STRIPE_PRO_PRICE_ID: price_dummy
+
+    # 3️⃣ Run Tests (Jest)
+    - name: Run Tests
+      run: npm test
+      env:
+        NODE_ENV: test
+        PORT: 8000
+        # Connection string for the service container
+        DATABASE_URL: postgres://postgres:password@localhost:5432/myapp_test
+        
+        # Redis Connection
+        REDIS_HOST: localhost
+        REDIS_PORT: 6379
+        
+        # 🛡️ Dummy Secrets (Required by env.ts validation)
+        ACCESS_TOKEN_SECRET: test_secret_key_at_least_10_chars
+        STRIPE_SECRET_KEY: sk_test_dummy
+        STRIPE_WEBHOOK_SECRET: whsec_dummy
+        STRIPE_PRO_PRICE_ID: price_dummy
