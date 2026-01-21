@@ -3,6 +3,7 @@ import { verifyJWT } from "../../middlewares/auth.middleware";
 import { authorize } from "../../middlewares/authorize";
 import { Action } from "../iam/types";
 import { create, list, remove } from "./products.controller";
+import { cacheMiddleware } from "../../middlewares/cache.middleware";
 
 const router = Router();
 
@@ -21,7 +22,8 @@ router.post(
 // Note: Even a 'member' can do this based on our config
 router.get(
   "/", 
-  authorize('inventory:products', Action.READ), 
+  authorize('inventory:products', Action.READ),
+  cacheMiddleware(300),
   list
 );
 

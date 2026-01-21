@@ -1,11 +1,12 @@
 import { Request, Response } from "express";
 import { asyncHandler } from "../../utils/asyncHandler";
 import { ApiError } from "../../utils/ApiError";
-import { ApiResponse } from "../../utils/ApiResponse"; // 👈 Import ApiResponse
+import { ApiResponse } from "../../utils/ApiResponse";
 import * as productService from "./products.service";
 import { logAudit } from "../system/audit.service";
 import { checkProductLimit } from "../billing/billing.utils";
-import { getPaginationParams, paginateResponse } from "../../utils/pagination"; // 👈 Import Pagination Utils
+import { getPaginationParams, paginateResponse } from "../../utils/pagination";
+import { cacheService } from "../../services/cache.service";
 
 // Helper to get Org ID safely
 const getOrgId = (req: Request) => {
@@ -21,6 +22,11 @@ export const create = asyncHandler(async (req: Request, res: Response) => {
   await checkProductLimit(orgId);
   
   const result = await productService.createProduct(req.body, orgId);
+
+  // 🗑️ INVALIDATE CACHE
+  // Clear all cached pages for this organization's products
+  // Pattern matches: "cache:/api/v1/products*:org:123"
+  await cacheService.clearPattern(`cache:*/api/v1/products*:org:${orgId}`);
 
   // 🕵️ AUDIT LOG: Product Created
   // We assume result[0] is the created product because of .returning()
@@ -62,6 +68,9 @@ export const remove = asyncHandler(async (req: Request, res: Response) => {
   const result = await productService.deleteProduct(id, orgId);
   
   if (!result) throw new ApiError(404, "Product not found or access denied");
+
+  // 🗑️ INVALIDATE CACHE
+  await cacheService.clearPattern(`cache:*/api/v1/products*:org:${orgId}`);
   
   res.status(200).json(new ApiResponse(200, { msg: "Deleted successfully" }, "Product deleted successfully"));
 });
