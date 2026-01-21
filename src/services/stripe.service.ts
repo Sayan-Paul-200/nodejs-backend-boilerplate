@@ -1,13 +1,18 @@
 import Stripe from "stripe";
 import { env } from "../config/env";
 
+const STRIPE_KEY = env.STRIPE_SECRET_KEY || "sk_test_placeholder";
+
 // Initialize Stripe
-const stripe = new Stripe(env.STRIPE_SECRET_KEY || "", {
+const stripe = new Stripe(STRIPE_KEY, {
   apiVersion: "2025-12-15.clover" as any, // Use latest API version or valid string
   typescript: true,
 });
 
 export const createPortalSession = async (customerId: string) => {
+
+  if (!env.STRIPE_SECRET_KEY) throw new Error("Stripe is not configured");
+  
   return await stripe.billingPortal.sessions.create({
     customer: customerId,
     return_url: `${env.FRONTEND_URL}/dashboard`, // Where to send them back after they are done

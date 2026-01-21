@@ -4,10 +4,12 @@ import express from "express";
 import cors from "cors";
 import helmet from "helmet";
 import morgan from "morgan";
-import compression from "compression"; // 1. Import
-import cookieParser from "cookie-parser"; // 2. Import
-import hpp from "hpp"; // 3. Import
+import compression from "compression";
+import cookieParser from "cookie-parser";
+import hpp from "hpp";
 import { rateLimit } from "express-rate-limit";
+import { RedisStore } from "rate-limit-redis";
+import { Redis } from "ioredis";
 import { config } from "dotenv";
 import { ApiError } from "./utils/ApiError";
 import { ApiResponse } from "./utils/ApiResponse";
@@ -15,7 +17,7 @@ import swaggerUi from "swagger-ui-express";
 import fs from "fs";
 import path from "path";
 import { env } from "./config/env";
-import { requestLogger } from "./middlewares/requestId"; // 4. Import
+import { requestLogger } from "./middlewares/requestId";
 
 // Route Imports
 import authRoutes from "./modules/auth/auth.routes";
@@ -84,12 +86,32 @@ if (fs.existsSync(swaggerFile)) {
   app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 }
 
-// Rate Limiting
+// 🛡️ Distributed Rate Limiting (Redis)
+// Create a dedicated Redis client for the limiter
+const redisClient = new Redis({
+  host: env.REDIS_HOST,
+  port: parseInt(env.REDIS_PORT),
+  // enableOfflineQueue: false, // Fail fast if Redis is down
+});
+
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 100,
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // Limit each IP to 100 requests per window
   standardHeaders: true,
   legacyHeaders: false,
+  store: new RedisStore({
+    sendCommand: async (...args: string[]) => {
+      const [command, ...params] = args; // Separate command from params
+      const result = await redisClient.call(command, ...params); // Call Redis
+      return result as any; // Cast 'unknown' to satisfy the library's type expectation
+    },
+  }),
+  // Handler for when limit is reached
+  handler: (req, res) => {
+    res.status(429).json(
+      new ApiError(429, "Too many requests, please try again later.")
+    );
+  },
 });
 app.use(limiter);
 
