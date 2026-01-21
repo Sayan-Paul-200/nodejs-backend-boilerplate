@@ -2,6 +2,10 @@
 module.exports = {
   preset: "ts-jest",
   testEnvironment: "node",
+
+  moduleNameMapper: {
+    "^uuid$": require.resolve("uuid"), 
+  },
   
   // 1. FIX TYPO: Change 'matchers' to 'testMatch'
   testMatch: ["**/*.test.ts"],
