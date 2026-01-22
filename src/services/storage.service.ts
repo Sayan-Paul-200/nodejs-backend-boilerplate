@@ -1,6 +1,7 @@
-import multer from "multer";
+import multer, { FileFilterCallback } from "multer";
 import path from "path";
 import fs from "fs";
+import { Request } from "express";
 
 // Ensure upload directory exists
 const uploadDir = "uploads/";
@@ -10,10 +11,18 @@ if (!fs.existsSync(uploadDir)) {
 
 // Configure Local Storage
 const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
+  destination: function (
+    req: Request, 
+    file: Express.Multer.File, 
+    cb: (error: Error | null, destination: string) => void
+  ) {
     cb(null, uploadDir);
   },
-  filename: function (req, file, cb) {
+  filename: function (
+    req: Request, 
+    file: Express.Multer.File, 
+    cb: (error: Error | null, filename: string) => void
+  ) {
     // Rename: fieldname-timestamp.ext
     const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
     cb(null, file.fieldname + "-" + uniqueSuffix + path.extname(file.originalname));
@@ -24,7 +33,11 @@ const storage = multer.diskStorage({
 export const upload = multer({ 
   storage: storage,
   limits: { fileSize: 5 * 1024 * 1024 }, // 5MB Limit
-  fileFilter: (req, file, cb) => {
+  fileFilter: (
+    req: Request, 
+    file: Express.Multer.File, 
+    cb: FileFilterCallback
+  ) => {
     // Only allow images
     if (file.mimetype.startsWith("image/")) {
       cb(null, true);
