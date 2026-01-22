@@ -95,7 +95,13 @@ const redisClient = new Redis({
   tls: env.REDIS_HOST === "localhost" ? undefined : {
     rejectUnauthorized: false // Required for some serverless environments
   },
+  retryStrategy: (times) => Math.min(times * 50, 2000),
   // enableOfflineQueue: false, // Fail fast if Redis is down
+});
+
+redisClient.on("error", (err) => {
+  console.error("❌ Redis Client Error:", err);
+  // Do NOT throw here. Just log it. The client will auto-reconnect.
 });
 
 const limiter = rateLimit({
