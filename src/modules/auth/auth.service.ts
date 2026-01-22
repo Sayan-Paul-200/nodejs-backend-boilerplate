@@ -6,7 +6,7 @@ import { ApiError } from "../../utils/ApiError";
 import { eq } from "drizzle-orm";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import { v7 as uuidv7 } from "uuid";
+import { uuidv7 } from "../../utils/uuidv7";
 import { invitations } from "../../db/schema";
 import crypto from "crypto";
 import { env } from "../../config/env";
