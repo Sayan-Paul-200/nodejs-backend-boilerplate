@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "dev": "tsx watch -r dotenv/config src/index.ts",
-    "build": "tsc",
+    "build": "npm run swagger && tsc && cp src/swagger_output.json dist/swagger_output.json",
     "start": "node dist/index.js",
     "db:push": "drizzle-kit push",
     "db:generate": "drizzle-kit generate",
