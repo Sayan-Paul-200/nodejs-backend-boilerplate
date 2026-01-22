@@ -59,7 +59,7 @@ jobs:
     # 2️⃣ Database Setup
     # Uses 'db:push' (Drizzle) to sync schema with the temporary CI database
     - name: Setup Test Database
-      run: npm run db:push
+      run: npm run migrate:internal
       env:
         # Connects to the postgres service defined above
         DATABASE_URL: postgres://postgres:password@localhost:5432/myapp_test
