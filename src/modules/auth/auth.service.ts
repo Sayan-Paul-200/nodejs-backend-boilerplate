@@ -1,13 +1,12 @@
 // Login and registration service using Drizzle ORM and bcrypt
 
 import { db } from "../../db";
-import { users, refreshTokens, organizations } from "../../db/schema";
+import { users, refreshTokens, organizations, invitations } from "../../db/schema";
 import { ApiError } from "../../utils/ApiError";
 import { eq } from "drizzle-orm";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { uuidv7 } from "../../utils/uuidv7";
-import { invitations } from "../../db/schema";
 import crypto from "crypto";
 import { env } from "../../config/env";
 
@@ -55,37 +54,41 @@ export const registerUser = async (email: string, pass: string, fullName: string
     throw new ApiError(409, "User already exists");
   }
 
-  const [newOrg] = await db
-    .insert(organizations)
-    .values({
-      name: `${fullName}'s Workspace`, // Default name
-    })
-    .returning();
-
   const hashedPassword = await bcrypt.hash(pass, 10);
-  const newUserId = uuidv7(); // App-side UUIDv7 generation
+  const newUserId = uuidv7();
 
-  // Insert User
-  const [newUser] = await db
-    .insert(users)
-    .values({
-      id: newUserId,
-      email,
-      fullName,
-      passwordHash: hashedPassword,
-      organizationId: newOrg.id, // <--- LINKING TENANT
-      role: "admin", // First user is always Admin
-    })
-    .returning({
-      id: users.id,
-      email: users.email,
-      fullName: users.fullName,
-      organizationId: users.organizationId,
-      role: users.role,
-      createdAt: users.createdAt,
-    });
+  // ✅ 2. WRAP IN TRANSACTION
+  return await db.transaction(async (tx) => {
+    // A. Create Org
+    const [newOrg] = await tx
+      .insert(organizations)
+      .values({
+        name: `${fullName}'s Workspace`,
+      })
+      .returning();
 
-  return newUser;
+    // B. Create User (Linked to Org)
+    const [newUser] = await tx
+      .insert(users)
+      .values({
+        id: newUserId,
+        email,
+        fullName,
+        passwordHash: hashedPassword,
+        organizationId: newOrg.id,
+        role: "admin",
+      })
+      .returning({
+        id: users.id,
+        email: users.email,
+        fullName: users.fullName,
+        organizationId: users.organizationId,
+        role: users.role,
+        createdAt: users.createdAt,
+      });
+      
+    return newUser;
+  });
 };
 
 export const loginUser = async (email: string, pass: string) => {
@@ -180,23 +183,26 @@ export const registerViaInvite = async (token: string, fullName: string, passwor
   const hashedPassword = await bcrypt.hash(password, 10);
   const newUserId = uuidv7();
 
-  // 3. Create User (Linked to Org from Invite)
-  const [newUser] = await db.insert(users).values({
-    id: newUserId,
-    email: invite.email,
-    fullName,
-    passwordHash: hashedPassword,
-    organizationId: invite.organizationId, // <--- THE MAGIC LINK
-    role: invite.role, // Use role from invite
-    status: 'active'
-  }).returning();
+  // ✅ 3. WRAP IN TRANSACTION
+  return await db.transaction(async (tx) => {
+    // A. Create User
+    const [newUser] = await tx.insert(users).values({
+      id: newUserId,
+      email: invite.email,
+      fullName,
+      passwordHash: hashedPassword,
+      organizationId: invite.organizationId,
+      role: invite.role,
+      status: 'active'
+    }).returning();
 
-  // 4. Mark Invite as Accepted
-  await db.update(invitations)
-    .set({ status: 'accepted' })
-    .where(eq(invitations.id, invite.id));
+    // B. Mark Invite as Accepted
+    await tx.update(invitations)
+      .set({ status: 'accepted' })
+      .where(eq(invitations.id, invite.id));
 
-  return newUser;
+    return newUser;
+  });
 };
 
 export const requestPasswordReset = async (email: string) => {

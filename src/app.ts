@@ -146,8 +146,11 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
   const statusCode = err.statusCode || 500;
   const message = err.message || "Internal Server Error";
 
-  // Log with Request ID for debugging
-  console.error(`[${(req as any).id}] ❌ Error: ${message}`);
+  // 🛑 OPTIMIZATION: Only log "Server Errors" (500+) or all errors in Development.
+  // This prevents production logs from being flooded by "401 Invalid Password" or "404 Not Found" events from bots/scanners.
+  if (statusCode >= 500 || env.NODE_ENV === "development") {
+    console.error(`[${(req as any).id}] ❌ Error: ${message}`);
+  }
 
   res.status(statusCode).json({
     success: false,
