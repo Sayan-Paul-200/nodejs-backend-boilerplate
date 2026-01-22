@@ -38,6 +38,7 @@ const envSchema = z.object({
   REDIS_HOST: z.string().default("localhost"),
   REDIS_PORT: z.string().default("6379"),
   // Optional: REDIS_PASSWORD if you use a secure cloud redis later
+  REDIS_PASSWORD: z.string().optional(),
 });
 
 // Validate process.env

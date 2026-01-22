@@ -91,6 +91,10 @@ if (fs.existsSync(swaggerFile)) {
 const redisClient = new Redis({
   host: env.REDIS_HOST,
   port: parseInt(env.REDIS_PORT),
+  password: env.REDIS_PASSWORD,
+  tls: env.REDIS_HOST === "localhost" ? undefined : {
+    rejectUnauthorized: false // Required for some serverless environments
+  },
   // enableOfflineQueue: false, // Fail fast if Redis is down
 });
 
