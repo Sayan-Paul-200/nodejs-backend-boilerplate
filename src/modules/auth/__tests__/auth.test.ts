@@ -21,6 +21,7 @@ describe("Auth Module", () => {
   const testUser = {
     email: "test@example.com",
     password: "password123",
+    fullName: "Test User"
   };
 
   describe("POST /api/v1/auth/register", () => {
@@ -42,7 +43,10 @@ describe("Auth Module", () => {
 
   describe("POST /api/v1/auth/login", () => {
     it("should login successfully with correct credentials", async () => {
-      const res = await request(app).post("/api/v1/auth/login").send(testUser);
+      const res = await request(app).post("/api/v1/auth/login").send({
+        email: testUser.email,
+        password: testUser.password
+      });
 
       expect(res.statusCode).toBe(200);
       expect(res.body.data.accessToken).toBeDefined();
