@@ -11,8 +11,8 @@ export const redisConfig = {
   host: env.REDIS_HOST,
   port: parseInt(env.REDIS_PORT),
   password: env.REDIS_PASSWORD,
-  tls: env.REDIS_HOST === "localhost" ? undefined : {
-    rejectUnauthorized: false, // Fixes "self-signed certificate" errors on some providers
+  tls: ["localhost", "redis"].includes(env.REDIS_HOST) ? undefined : {
+    rejectUnauthorized: false, 
   },
   maxRetriesPerRequest: null, // ⚠️ Strictly required by BullMQ
   enableReadyCheck: false,
