@@ -1,4 +1,5 @@
 import swaggerAutogen from "swagger-autogen";
+import fs from "fs";
 
 const doc = {
   info: {
@@ -29,6 +30,21 @@ const endpointsFiles = ["./src/app.ts"]; // 👈 The entry point to scan all rou
 
 // Run the generator
 swaggerAutogen()(outputFile, endpointsFiles, doc).then(() => {
-  console.log("✅ Swagger documentation generated successfully!");
+  // 🛠️ ROOT FIX: Manually remove 'host' and 'schemes' to allow dynamic resolution
+  // This overcomes the library's default behavior of inserting "localhost:3000"
+  try {
+    const swaggerFileContent = fs.readFileSync(outputFile, "utf-8");
+    const swaggerJson = JSON.parse(swaggerFileContent);
+
+    delete swaggerJson.host;
+    delete swaggerJson.schemes;
+
+    fs.writeFileSync(outputFile, JSON.stringify(swaggerJson, null, 2));
+    console.log("✅ Swagger documentation generated successfully (Dynamic Host)!");
+  } catch (err) {
+    console.error("❌ Failed to post-process swagger file:", err);
+    process.exit(1);
+  }
+  
   process.exit(0);
 });
