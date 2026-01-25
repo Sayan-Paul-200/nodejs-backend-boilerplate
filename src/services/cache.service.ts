@@ -9,10 +9,14 @@ class CacheService {
     this.redis = new IORedis({
       host: env.REDIS_HOST,
       port: parseInt(env.REDIS_PORT),
+      password: env.REDIS_PASSWORD,
+      tls: ["localhost", "redis"].includes(env.REDIS_HOST) ? undefined : {
+        rejectUnauthorized: false,
+      },
       maxRetriesPerRequest: null,
     });
 
-    this.redis.on("connect", () => logger.info("✅ Redis Cache Connected"));
+    this.redis.on("ready", () => logger.info("✅ Redis Cache Service Ready"));
     this.redis.on("error", (err) => logger.error("❌ Redis Cache Error", err));
   }
 
