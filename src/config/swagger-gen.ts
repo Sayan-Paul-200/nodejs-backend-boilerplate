@@ -8,7 +8,7 @@ const doc = {
     version: "1.8.1",
   },
   // host: "localhost:8000",
-  basePath: "/api/v1",
+  basePath: "/",
   // schemes: ["http"],
   securityDefinitions: {
     bearerAuth: {
