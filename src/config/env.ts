@@ -16,7 +16,7 @@ const envSchema = z.object({
   ACCESS_TOKEN_SECRET: z.string().min(10, "ACCESS_TOKEN_SECRET is too short"),
   ACCESS_TOKEN_EXPIRY: z.string().default("1d"),
   FRONTEND_URL: z.string().url().default("http://localhost:3000"),
-  CORS_ORIGIN: z.string().url().default("http://localhost:3000"),
+  CORS_ORIGIN: z.string().default("*"),
 
   // Email Configuration (Nodemailer)
   SMTP_HOST: z.string().optional(),
