@@ -1,10 +1,10 @@
-// Login and registration service using Drizzle ORM and bcrypt
+// Login and registration service using Drizzle ORM and argon2
 
 import { db } from "../../db";
 import { users, refreshTokens, organizations, invitations } from "../../db/schema";
 import { ApiError } from "../../utils/ApiError";
 import { eq } from "drizzle-orm";
-import bcrypt from "bcrypt";
+import { hash, verify } from "argon2";
 import jwt from "jsonwebtoken";
 import { uuidv7 } from "../../utils/uuidv7";
 import crypto from "crypto";
@@ -54,7 +54,7 @@ export const registerUser = async (email: string, pass: string, fullName: string
     throw new ApiError(409, "User already exists");
   }
 
-  const hashedPassword = await bcrypt.hash(pass, 10);
+  const hashedPassword = await hash(pass);
   const newUserId = uuidv7();
 
   // ✅ 2. WRAP IN TRANSACTION
@@ -104,7 +104,7 @@ export const loginUser = async (email: string, pass: string) => {
     throw new ApiError(404, "User does not exist");
   }
 
-  const isPasswordValid = await bcrypt.compare(pass, user.passwordHash);
+  const isPasswordValid = await verify(user.passwordHash, pass);
 
   if (!isPasswordValid) {
     throw new ApiError(401, "Invalid user credentials");
@@ -180,7 +180,7 @@ export const registerViaInvite = async (token: string, fullName: string, passwor
   }
 
   // 2. Hash Password
-  const hashedPassword = await bcrypt.hash(password, 10);
+  const hashedPassword = await hash(password);
   const newUserId = uuidv7();
 
   // ✅ 3. WRAP IN TRANSACTION
@@ -249,7 +249,7 @@ export const resetPassword = async (token: string, newPassword: string) => {
   }
 
   // 3. Hash new password
-  const hashedPassword = await bcrypt.hash(newPassword, 10);
+  const hashedPassword = await hash(newPassword);
 
   // 4. Update User & Clear Token
   await db.update(users)
